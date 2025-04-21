@@ -1,5 +1,5 @@
 
-import React, { ReactNode, useEffect, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   SidebarProvider,
@@ -12,10 +12,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from '@/components/ui/sidebar';
-import { FileAudio, Home, Upload, Search, Info, LogOut } from 'lucide-react';
-import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { User } from '@supabase/supabase-js';
+import { FileAudio, Home, Upload, Search, Info } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -23,36 +21,6 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [user, setUser] = useState<User | null>(null);
-  
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        
-        // Redirect to login if not authenticated
-        if (event === 'SIGNED_OUT') {
-          navigate('/auth');
-        }
-      }
-    );
-    
-    // Check current session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (!session) {
-        navigate('/auth');
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [navigate]);
-  
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
   
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
@@ -60,11 +28,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: Search, label: 'Search', path: '/search' },
     { icon: Info, label: 'About', path: '/about' },
   ];
-  
-  // If not authenticated, don't show the dashboard
-  if (!user) {
-    return null;
-  }
   
   return (
     <SidebarProvider>
@@ -92,23 +55,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </SidebarMenu>
           </SidebarContent>
           
-          <SidebarFooter className="p-4 flex flex-col gap-4">
-            {user && (
-              <div className="flex flex-col items-center gap-2">
-                <div className="text-sm font-medium">
-                  {user.email || user.user_metadata.full_name || 'User'}
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSignOut}
-                  className="w-full flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign Out
-                </Button>
-              </div>
-            )}
+          <SidebarFooter className="p-4">
             <div className="text-xs text-center text-muted-foreground">
               Testimony Vault © {new Date().getFullYear()}
             </div>
