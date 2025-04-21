@@ -1,0 +1,28 @@
+
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7-alpine
+
+  backend:
+    build: ./backend
+    env_file: .env
+    volumes:
+      - ./backend/app:/app/app
+      - ./gdrive-creds.json:/run/secrets/gdrive-creds.json:ro
+    ports:
+      - "8000:8000"
+    depends_on:
+      - redis
+
+  worker:
+    build: ./backend
+    env_file: .env
+    volumes:
+      - ./backend/app:/app/app
+      - ./gdrive-creds.json:/run/secrets/gdrive-creds.json:ro
+    command: ["celery", "-A", "app.tasks.celery", "worker", "-l", "info"]
+    depends_on:
+      - backend
+      - redis
