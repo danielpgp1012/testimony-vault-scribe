@@ -1,0 +1,53 @@
+[build-system]
+# Specifies build-time requirements. setuptools is the standard.
+requires = ["setuptools>=61.0"]
+# Specifies the PEP 517 build backend implementation.
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "testimony-backend"
+version = "0.1.0"
+description = "FastAPI + Celery backend for transcribing church testimonies"
+# Add your actual name and email
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+# Consider adding a license, e.g., license = {file = "LICENSE"} or license = {text = "MIT"}
+# license = "MIT"
+# Add a README file for better description on PyPI etc.
+# readme = "README.md"
+
+# Use latest releases - This is fine, ensures modern Python features.
+requires-python = ">=3.11"
+
+dependencies = [
+    # Use a list format for dependencies - more standard and flexible
+    "fastapi", # Use >= instead of ^ for slightly broader compatibility if needed, though ^ is fine too.
+    "uvicorn[standard]>=0.24.0", # Combined version and extras
+    "celery>=5.4.0",
+    "redis>=5.0.4",
+    "supabase>=2.4.6",
+    "google-api-python-client>=2.127.0",
+    "google-cloud-speech>=2.26.0",
+    "google-cloud-storage>=2.16.0",
+    "python-multipart>=0.0.9",
+    "python-dotenv>=1.0.1",
+    "pydantic>=2.10.2", # Ensure compatibility with FastAPI version if any issues arise
+]
+
+# Optional: Add project URLs
+# [project.urls]
+# homepage = "https://example.com"
+# repository = "https://github.com/yourusername/testimony-backend"
+
+# Optional: Define extras for development, testing etc.
+# [project.optional-dependencies]
+# dev = [
+#   "pytest>=7.0.0",
+#   "ruff>=0.1.0",
+#   "mypy>=1.0.0",
+# ]
+# test = [
+#   "pytest>=7.0.0",
+#   "httpx>=0.25.0", # For testing FastAPI endpoints
+# ]

@@ -1,26 +1,25 @@
-
 [project]
 name = "testimony-backend"
 version = "0.1.0"
 description = "FastAPI + Celery backend for transcribing church testimonies"
-authors = ["Your Name <you@example.com>"]
+authors = [{"name"="Daniel Pacheco"}]
+requires-python = ">=3.11"
 
-# Use latest releases
-requires-python = ">=3.12"
-
-[project.dependencies]
-fastapi = "^0.118.0"
-uvicorn = {extras = ["standard"], version = "^0.24.0"}
-celery = "^5.4.0"
-redis = "^5.0.4"
-supabase = "^2.4.6"
-google-api-python-client = "^2.127.0"
-google-cloud-speech = "^2.26.0"
-google-cloud-storage = "^2.16.0"
-python-multipart = "^0.0.9"
-python-dotenv = "^1.0.1"
-pydantic = "^2.10.2"
+# Dependencies must be a list of strings per PEP 621
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]>=0.24.0",
+  "celery>=5.4.0",
+  "redis>=5.0.4",
+  "supabase>=2.4.6",
+  "google-api-python-client>=2.127.0",
+  "google-cloud-speech>=2.26.0",
+  "google-cloud-storage>=2.16.0",
+  "python-multipart>=0.0.9",
+  "python-dotenv>=1.0.1",
+  "pydantic>=2.10.2",
+]
 
 [build-system]
-requires = ["uv>=1.0.0"]
-build-backend = "uv.buildapi"
+requires = ["hatchling>=1.20.0"]
+build-backend = "hatchling.build"

@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: testimony-backend
+Version: 0.1.0
+Summary: FastAPI + Celery backend for transcribing church testimonies
+Author-email: Your Name <you@example.com>
+Requires-Python: >=3.11
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]>=0.24.0
+Requires-Dist: celery>=5.4.0
+Requires-Dist: redis>=5.0.4
+Requires-Dist: supabase>=2.4.6
+Requires-Dist: google-api-python-client>=2.127.0
+Requires-Dist: google-cloud-speech>=2.26.0
+Requires-Dist: google-cloud-storage>=2.16.0
+Requires-Dist: python-multipart>=0.0.9
+Requires-Dist: python-dotenv>=1.0.1
+Requires-Dist: pydantic>=2.10.2
