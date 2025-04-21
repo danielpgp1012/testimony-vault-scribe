@@ -1,24 +1,36 @@
-
-# Python 3.12 base and lightning‑fast dependency management with **uv**
-FROM python:3.12‑slim
+# Python 3.12 base
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# — System deps
+# Install system dependencies
+# - gcc: Might be needed for building some Python C extensions if wheels aren't available
+# - ffmpeg: Presumably needed for audio processing by your app
+# - curl: Keeping just in case, though pip is installing uv now.
+# --no-install-recommends keeps the image smaller
 RUN apt-get update \
-    && apt-get install -y gcc ffmpeg curl \
+    && apt-get install -y --no-install-recommends gcc ffmpeg curl \
     && rm -rf /var/lib/apt/lists/*
 
-# — Install uv (https://astral.sh/uv) once; it gives us super‑fast installs
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# --- Copy project files BEFORE installing dependencies ---
+# uv pip install . needs pyproject.toml and potentially src/
+COPY pyproject.toml ./
+COPY src ./src
+# If you have other files needed for the *build* (e.g., README.md if referenced in pyproject.toml), copy them too.
+# COPY README.md ./
 
-# — Install Python deps with uv (drop a lockfile later if you like)
-COPY backend/requirements.txt /tmp/requirements.txt
-RUN uv pip install --system -r /tmp/requirements.txt
+# --- Install uv using pip AND install the project + dependencies from pyproject.toml ---
+# This ensures 'uv' is available for the second part of the command.
+# 'uv pip install .' reads pyproject.toml and installs dependencies + the project itself.
+RUN pip install uv && \
+    uv pip install --system .
+# --- End change ---
 
-# — Copy project
-COPY backend/app ./app
-COPY backend/worker.py .
+# No longer need a separate project install step, as 'uv pip install .' handled it.
 
-# — Run the API with Uvicorn (still the ASGI server) on Python 3.12
+# Expose the port the FastAPI app will run on
+EXPOSE 8000
+
+# Default command to run the FastAPI application with Uvicorn
+# Uvicorn finds 'app.main:app' because the package was installed by 'uv pip install .'
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
