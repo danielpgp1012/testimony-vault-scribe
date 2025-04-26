@@ -6,7 +6,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Testimony } from '@/types/testimony';
 import { fetchTestimonies, searchTestimonies, filterTestimonies } from '@/services/testimonyService';
 import { FileAudio } from 'lucide-react';
-import { UserProfile } from '@/components/UserProfile';
 
 const DashboardPage = () => {
   const [testimonies, setTestimonies] = useState<Testimony[]>([]);
@@ -96,56 +95,49 @@ const DashboardPage = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <SearchFilters 
-            onSearch={handleSearch} 
-            onFilterChange={handleFilterChange} 
-          />
+      <div className="space-y-6">
+        <SearchFilters 
+          onSearch={handleSearch} 
+          onFilterChange={handleFilterChange} 
+        />
 
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="border rounded-md p-4 space-y-3">
-                  <Skeleton className="h-6 w-2/3" />
-                  <Skeleton className="h-4 w-4/5" />
-                  <Skeleton className="h-4 w-3/5" />
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-10 w-full mt-4" />
-                </div>
-              ))}
-            </div>
-          ) : filteredTestimonies.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredTestimonies.map((testimony) => (
-                <TestimonyCard
-                  key={testimony.id}
-                  testimony={testimony}
-                  onViewDetails={handleViewDetails}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="rounded-full bg-muted p-6 mb-4">
-                <FileAudio className="h-10 w-10 text-muted-foreground" />
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="border rounded-md p-4 space-y-3">
+                <Skeleton className="h-6 w-2/3" />
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-3/5" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-10 w-full mt-4" />
               </div>
-              <h3 className="text-lg font-medium">No testimonies found</h3>
-              <p className="text-muted-foreground mt-1 max-w-md">
-                {searchQuery || Object.values(filters).some(val => 
-                  val !== 'all' && !(Array.isArray(val) && val.length === 0)
-                ) 
-                  ? "Try adjusting your search or filters to find what you're looking for."
-                  : "Start by uploading your first testimony."}
-              </p>
+            ))}
+          </div>
+        ) : filteredTestimonies.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {filteredTestimonies.map((testimony) => (
+              <TestimonyCard
+                key={testimony.id}
+                testimony={testimony}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-muted p-6 mb-4">
+              <FileAudio className="h-10 w-10 text-muted-foreground" />
             </div>
-          )}
-        </div>
-
-        <div className="space-y-6">
-          <UserProfile />
-          {/* Additional dashboard widgets could go here */}
-        </div>
+            <h3 className="text-lg font-medium">No testimonies found</h3>
+            <p className="text-muted-foreground mt-1 max-w-md">
+              {searchQuery || Object.values(filters).some(val => 
+                val !== 'all' && !(Array.isArray(val) && val.length === 0)
+              ) 
+                ? "Try adjusting your search or filters to find what you're looking for."
+                : "Start by uploading your first testimony."}
+            </p>
+          </div>
+        )}
       </div>
 
       <TestimonyDetail
