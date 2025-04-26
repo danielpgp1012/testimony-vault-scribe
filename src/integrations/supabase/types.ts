@@ -30,6 +30,48 @@ export type Database = {
         }
         Relationships: []
       }
+      testimonies: {
+        Row: {
+          created_at: string
+          date: string
+          drive_id: string | null
+          id: number
+          speaker: string | null
+          storage_url: string | null
+          tags: string[] | null
+          title: string
+          transcript: string | null
+          transcript_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          drive_id?: string | null
+          id?: number
+          speaker?: string | null
+          storage_url?: string | null
+          tags?: string[] | null
+          title: string
+          transcript?: string | null
+          transcript_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          drive_id?: string | null
+          id?: number
+          speaker?: string | null
+          storage_url?: string | null
+          tags?: string[] | null
+          title?: string
+          transcript?: string | null
+          transcript_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

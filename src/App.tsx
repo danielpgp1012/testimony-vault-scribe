@@ -11,6 +11,7 @@ import SearchPage from "@/pages/SearchPage";
 import AboutPage from "@/pages/AboutPage";
 import AuthPage from "@/pages/AuthPage";
 import NotFound from "@/pages/NotFound";
+import { AuthGuard } from "@/components/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -22,26 +23,31 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/auth" element={<AuthPage />} />
-          <Route path="/" element={
-            <DashboardLayout>
-              <DashboardPage />
-            </DashboardLayout>
-          } />
-          <Route path="/upload" element={
-            <DashboardLayout>
-              <UploadPage />
-            </DashboardLayout>
-          } />
-          <Route path="/search" element={
-            <DashboardLayout>
-              <SearchPage />
-            </DashboardLayout>
-          } />
-          <Route path="/about" element={
-            <DashboardLayout>
-              <AboutPage />
-            </DashboardLayout>
-          } />
+          
+          {/* Protected routes */}
+          <Route element={<AuthGuard />}>
+            <Route path="/" element={
+              <DashboardLayout>
+                <DashboardPage />
+              </DashboardLayout>
+            } />
+            <Route path="/upload" element={
+              <DashboardLayout>
+                <UploadPage />
+              </DashboardLayout>
+            } />
+            <Route path="/search" element={
+              <DashboardLayout>
+                <SearchPage />
+              </DashboardLayout>
+            } />
+            <Route path="/about" element={
+              <DashboardLayout>
+                <AboutPage />
+              </DashboardLayout>
+            } />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
