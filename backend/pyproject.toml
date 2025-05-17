@@ -33,6 +33,7 @@ dependencies = [
     "python-multipart>=0.0.9",
     "python-dotenv>=1.0.1",
     "pydantic>=2.10.2", # Ensure compatibility with FastAPI version if any issues arise
+    "pydub",
 ]
 
 # Optional: Add project URLs

@@ -1,5 +1,5 @@
 # Python 3.12 base
-FROM python:3.12-slim
+FROM --platform=linux/amd64 python:3.12-slim
 
 WORKDIR /app
 
@@ -8,8 +8,13 @@ WORKDIR /app
 # - ffmpeg: Presumably needed for audio processing by your app
 # - curl: Keeping just in case, though pip is installing uv now.
 # --no-install-recommends keeps the image smaller
+# - build-essential: Added for better cross-platform compatibility
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends gcc ffmpeg curl \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        ffmpeg \
+        curl \
+        build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Copy project files BEFORE installing dependencies ---
@@ -33,4 +38,4 @@ EXPOSE 8000
 
 # Default command to run the FastAPI application with Uvicorn
 # Uvicorn finds 'app.main:app' because the package was installed by 'uv pip install .'
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

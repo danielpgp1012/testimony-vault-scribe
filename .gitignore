@@ -1,4 +1,10 @@
 # Logs
+.venv
+*.pyc
+*.mp3
+*.wav
+*.egg-info
+*.egg-info/*
 logs
 *.log
 npm-debug.log*
