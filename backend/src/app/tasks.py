@@ -1,12 +1,9 @@
 import os
 import uuid
 import traceback
-from google.cloud import speech_v1p1beta1 as speech
-from google.cloud import storage
-from google.protobuf.json_format import MessageToDict
-from pydub import AudioSegment
-from pydub.exceptions import CouldntDecodeError
 import tempfile
+from openai import OpenAI
+from google.cloud import storage
 
 from .deps import get_supabase
 from .crud import update_testimony
@@ -14,11 +11,11 @@ from .crud import update_testimony
 # --- Configuration & Clients (Ensure ENV VARS are set) ---
 GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
 try:
-    speech_client = speech.SpeechClient()
     storage_client = storage.Client()
+    openai_client = OpenAI()  # Uses OPENAI_API_KEY environment variable
     print("Clients initialized.")
 except Exception as e:
-    raise RuntimeError(f"Failed to initialize Google Cloud clients: {e}")
+    raise RuntimeError(f"Failed to initialize clients: {e}")
 
 def update_db_status(testimony_id, status, transcript=None):
     """Update testimony status and transcript in Supabase"""
@@ -34,80 +31,68 @@ def update_db_status(testimony_id, status, transcript=None):
         print(f"ERROR updating DB for testimony {testimony_id}: {e}")
         traceback.print_exc()
 
-def get_audio_metadata(local_path):
-    """Gets sample rate, channels, duration_ms. Returns (None, None, None) on error."""
+def download_from_gcs(gcs_uri, local_path):
+    """Download file from GCS to local path"""
     try:
-        if not os.path.exists(local_path): raise FileNotFoundError(f"File not found: {local_path}")
-        audio = AudioSegment.from_file(local_path)
-        print(f"Metadata: Rate={audio.frame_rate}Hz, Channels={audio.channels}, Duration={len(audio)/1000:.2f}s")
-        if audio.frame_rate <= 0 or audio.channels <= 0 or len(audio) == 0:
-            raise ValueError("Invalid metadata extracted (<= 0)")
-        return audio.frame_rate, audio.channels, len(audio)
+        # Extract bucket name and blob name from GCS URI
+        if not gcs_uri.startswith("gs://"):
+            raise ValueError(f"Invalid GCS URI: {gcs_uri}")
+        
+        # Remove gs:// prefix and split into bucket and blob
+        path_parts = gcs_uri[5:].split("/", 1)
+        if len(path_parts) != 2:
+            raise ValueError(f"Invalid GCS URI format: {gcs_uri}")
+        
+        bucket_name, blob_name = path_parts
+        
+        # Download the file
+        bucket = storage_client.bucket(bucket_name)
+        blob = bucket.blob(blob_name)
+        blob.download_to_filename(local_path)
+        print(f"Downloaded {gcs_uri} to {local_path}")
+        
     except Exception as e:
-        print(f"ERROR getting metadata for {local_path}: {e}")
-        return None, None, None
+        print(f"ERROR downloading from GCS: {e}")
+        raise
 
-def transcribe_testimony(testimony_id: int, gcs_uri: str, sample_rate: int = None, channels: int = None, duration_ms: int = None):
+def transcribe_testimony(testimony_id: int, gcs_uri: str):
     """
-    Transcribe testimony audio using Google Speech-to-Text API.
+    Transcribe testimony audio using OpenAI Whisper API.
     
     Args:
         testimony_id: The ID of the testimony in the database
         gcs_uri: The GCS URI of the audio file
-        sample_rate: Optional sample rate in Hz
-        channels: Optional number of audio channels
-        duration_ms: Optional duration in milliseconds
     """
     print(f"\n--- Transcribing testimony {testimony_id} from {gcs_uri} ---")
     update_db_status(testimony_id, "processing")
     
-    # Extract the blob name from the GCS URI (for logging only)
-    blob_name = gcs_uri.replace(f"gs://{GCS_BUCKET_NAME}/", "")
-    
+    # Create a temporary file for the audio
+    temp_file = None
     try:
-        # If metadata is not provided, we'll use defaults or guess
-        if not all([sample_rate, channels, duration_ms]):
-            print("Warning: Missing audio metadata, using defaults")
-            sample_rate = sample_rate or 44100  # Default to CD quality
-            channels = channels or 1  # Default to mono
-            duration_ms = duration_ms or 600000  # Default to 10 minutes
-        else:
-            print(f"Using provided metadata: Rate={sample_rate}Hz, Channels={channels}, Duration={duration_ms/1000:.2f}s")
+        # Create temporary file with appropriate extension
+        file_extension = os.path.splitext(gcs_uri)[1] or '.mp3'
+        temp_file = tempfile.NamedTemporaryFile(suffix=file_extension, delete=False)
+        temp_file.close()
         
-        # Configure API Request
-        config = speech.RecognitionConfig(
-            # encoding determined by extension or default to MP3 if needed
-            encoding=speech.RecognitionConfig.AudioEncoding.MP3,
-            sample_rate_hertz=sample_rate,
-            language_code="es-ES",
-            audio_channel_count=channels,
-            enable_automatic_punctuation=True,
-            alternative_language_codes=["fr-FR", "pt-PT"],
-            model="latest_long" # Optional: Try different models
-        )
-        audio = speech.RecognitionAudio(uri=gcs_uri)
-        print(f"Sending API request with config: {config}")
-
-        # Start and wait for Job
-        operation = speech_client.long_running_recognize(config=config, audio=audio)
-        print(f"Operation started: {operation.operation.name}. Waiting...")
-        # Adjust timeout: duration in seconds * ~0.6 + buffer (e.g., 600s)
-        timeout = (duration_ms / 1000 * 0.6) + 600
-        response = operation.result(timeout=timeout)
-        print("Operation finished.")
-
-        # *** Log RAW response for debugging ***
-        print("--- RAW API RESPONSE ---")
-        print(MessageToDict(response._pb))
-        print("--- END RAW RESPONSE ---")
-
-        # Process Results
-        transcript = " ".join(
-            alt.transcript for res in response.results for alt in res.alternatives
-        ).strip()
-
+        # Download audio file from GCS
+        print(f"Downloading audio file from {gcs_uri}")
+        download_from_gcs(gcs_uri, temp_file.name)
+        
+        # Open the audio file and send to Whisper
+        with open(temp_file.name, "rb") as audio_file:
+            print("Sending to OpenAI Whisper API...")
+            transcription = openai_client.audio.transcriptions.create(
+                model="whisper-1",  # Using whisper-1 model for better language support
+                file=audio_file,
+                language="es",  # Primary language is Spanish
+                response_format="text"
+            )
+        
+        transcript = transcription.strip() if transcription else ""
+        
         if transcript:
             print("Transcription successful.")
+            print(f"Transcript preview: {transcript[:200]}...")
             update_db_status(testimony_id, "completed", transcript)
         else:
             print("WARNING: Transcription result is empty.")
@@ -115,29 +100,31 @@ def transcribe_testimony(testimony_id: int, gcs_uri: str, sample_rate: int = Non
 
     except Exception as e:
         print(f"--- ERROR processing testimony {testimony_id} ---")
+        print(f"Error: {str(e)}")
         traceback.print_exc()
         update_db_status(testimony_id, "failed")
     finally:
+        # Clean up temporary file
+        if temp_file and os.path.exists(temp_file.name):
+            try:
+                os.unlink(temp_file.name)
+                print(f"Cleaned up temporary file: {temp_file.name}")
+            except Exception as e:
+                print(f"Warning: Could not delete temporary file {temp_file.name}: {e}")
         print(f"--- Finished testimony {testimony_id} ---")
 
 
 # --- Local Test ---
 if __name__ == "__main__":
-    # REQUIRES: ENV VARS (GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET_NAME), ffmpeg, libraries
+    # REQUIRES: ENV VARS (GOOGLE_APPLICATION_CREDENTIALS, GCS_BUCKET_NAME, OPENAI_API_KEY)
     TEST_FILE = "sample_audio_files/2024.11.24.Testimonio 2.mp3" # Change path if needed
     TEST_ID = 1
 
     if not os.path.exists(TEST_FILE):
         print(f"ERROR: Test file not found: {TEST_FILE}")
     else:
-        # For testing, upload to GCS first and extract metadata
+        # For testing, upload to GCS first
         try:
-            # Get metadata
-            audio = AudioSegment.from_file(TEST_FILE)
-            sample_rate = audio.frame_rate
-            channels = audio.channels
-            duration_ms = len(audio)
-            
             # Upload to GCS
             blob_name = f"testimony_audio/test_{TEST_ID}.mp3"
             bucket = storage_client.bucket(GCS_BUCKET_NAME)
@@ -145,14 +132,8 @@ if __name__ == "__main__":
             blob.upload_from_filename(TEST_FILE)
             gcs_uri = f"gs://{GCS_BUCKET_NAME}/{blob_name}"
             
-            # Transcribe with metadata
-            transcribe_testimony(
-                TEST_ID, 
-                gcs_uri, 
-                sample_rate=sample_rate,
-                channels=channels,
-                duration_ms=duration_ms
-            )
+            # Transcribe
+            transcribe_testimony(TEST_ID, gcs_uri)
         finally:
             try:
                 # Clean up the test file

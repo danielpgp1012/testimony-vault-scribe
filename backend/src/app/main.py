@@ -92,14 +92,8 @@ async def create_testimony(
         
     testimony_id = insert_testimony(supabase, testimony_data)
 
-    # 3. Kick off async transcription with metadata
-    transcribe_testimony(
-        testimony_id, 
-        storage_url,
-        sample_rate=sample_rate,
-        channels=channels,
-        duration_ms=duration_ms
-    )
+    # 3. Kick off async transcription
+    transcribe_testimony(testimony_id, storage_url)
 
     row = (
         supabase.table("testimonies")
