@@ -1,22 +1,25 @@
-
 export interface Testimony {
-  id: string;
-  title: string;
-  speaker: string;
-  date: string;
-  tags: string[];
-  driveId?: string;
-  storageUrl?: string;
-  transcriptStatus: 'pending' | 'processing' | 'completed' | 'failed';
+  id: number;
+  church_id?: string;
+  tags?: string[];
+  storage_url?: string;
+  transcript_status: 'pending' | 'processing' | 'completed' | 'failed';
   transcript?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
+  audio_hash?: string;
+  audio_duration_ms?: number;
+  sample_rate?: number;
+  channels?: number;
+  user_file_name?: string;
+  
+  // Frontend-specific fields (not in backend)
+  title?: string;
+  driveId?: string;
 }
 
 export interface TestimonyFormData {
-  title: string;
-  speaker: string;
-  date: string;
-  tags: string[];
+  // title: string;
+  church_id: string;
   audioFile?: File;
 }

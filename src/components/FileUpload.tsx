@@ -1,4 +1,3 @@
-
 import React, { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
@@ -6,11 +5,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { Calendar as CalendarIcon, X, UploadCloud } from 'lucide-react';
-import { format } from 'date-fns';
+import { X, UploadCloud } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -22,13 +18,9 @@ interface FileUploadProps {
 }
 
 const formSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  speaker: z.string().min(1, "Speaker name is required"),
-  date: z.date({
-    required_error: "Date is required",
-  }),
-  tags: z.array(z.string()).default([]),
-  audioFile: z.instanceof(File, { message: "Audio file is required" })
+  church_id: z.string().min(1, "Church ID is required"),
+  audioFile: z.instanceof(File, { message: "Audio file is required" }),
+  tags: z.array(z.string()).default([])
 });
 
 export function FileUpload({ onUpload }: FileUploadProps) {
@@ -38,9 +30,8 @@ export function FileUpload({ onUpload }: FileUploadProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: '',
-      speaker: '',
-      tags: [],
+      church_id: '',
+      tags: []
     },
   });
 
@@ -52,10 +43,10 @@ export function FileUpload({ onUpload }: FileUploadProps) {
         return;
       }
       
-      // Set default title from filename if empty
-      if (!form.getValues().title) {
+      // Set default church_id from filename if empty
+      if (!form.getValues().church_id) {
         const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-        form.setValue('title', fileName);
+        form.setValue('church_id', fileName);
       }
       
       form.setValue('audioFile', file);
@@ -92,14 +83,24 @@ export function FileUpload({ onUpload }: FileUploadProps) {
 
   const audioFile = form.watch('audioFile');
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const values = form.getValues();
+    
+    if (!values.audioFile) {
+      toast.error('Please select an audio file');
+      return;
+    }
+
+    if (!values.church_id) {
+      toast.error('Please enter a Church ID');
+      return;
+    }
+
     try {
       setIsUploading(true);
       await onUpload({
-        title: values.title,
-        speaker: values.speaker,
-        date: format(values.date, 'yyyy-MM-dd'),
-        tags: values.tags,
+        church_id: values.church_id,
         audioFile: values.audioFile,
       });
       form.reset();
@@ -110,23 +111,24 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     } finally {
       setIsUploading(false);
     }
-  }
+  };
 
   return (
     <Card className="w-full max-w-xl mx-auto">
       <CardContent className="pt-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div 
               {...getRootProps()} 
               className={cn(
-                "dropzone",
-                isDragActive && "active",
+                "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
+                "hover:border-primary/50 hover:bg-muted/50",
+                isDragActive && "border-primary bg-muted",
                 audioFile && "border-green-500 bg-green-50"
               )}
             >
               <input {...getInputProps()} />
-              <UploadCloud className="h-12 w-12 text-primary mb-2" />
+              <UploadCloud className="h-12 w-12 text-primary mb-2 mx-auto" />
               {audioFile ? (
                 <div className="text-center">
                   <p className="font-medium">{audioFile.name}</p>
@@ -144,66 +146,13 @@ export function FileUpload({ onUpload }: FileUploadProps) {
 
             <FormField
               control={form.control}
-              name="title"
+              name="church_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Title</FormLabel>
+                  <FormLabel>Church ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="Testimony title" {...field} />
+                    <Input placeholder="Church ID" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="speaker"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Speaker</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Speaker name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
@@ -244,7 +193,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
             <Button 
               type="submit" 
               className="w-full" 
-              disabled={isUploading}
+              disabled={isUploading || !audioFile}
             >
               {isUploading ? 'Uploading...' : 'Upload Testimony'}
             </Button>

@@ -19,7 +19,7 @@ interface SearchFiltersProps {
 
 export interface FilterOptions {
   status: string;
-  speaker: string;
+  church_id: string;
   tags: string[];
 }
 
@@ -27,7 +27,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
-    speaker: 'all',
+    church_id: 'all',
     tags: [],
   });
   const [tagInput, setTagInput] = useState('');
@@ -72,12 +72,12 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
   const resetFilters = () => {
     setFilters({
       status: 'all',
-      speaker: 'all',
+      church_id: 'all',
       tags: [],
     });
     onFilterChange({
       status: 'all',
-      speaker: 'all',
+      church_id: 'all',
       tags: [],
     });
   };
@@ -144,16 +144,16 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Speaker</label>
+              <label className="text-sm font-medium">Church ID</label>
               <Select
-                value={filters.speaker}
-                onValueChange={(value) => handleFilterChange('speaker', value)}
+                value={filters.church_id}
+                onValueChange={(value) => handleFilterChange('church_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select speaker" />
+                  <SelectValue placeholder="Select church ID" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Speakers</SelectItem>
+                  <SelectItem value="all">All Church IDs</SelectItem>
                   {/* These would be populated from data in a real app */}
                   <SelectItem value="john-doe">John Doe</SelectItem>
                   <SelectItem value="jane-smith">Jane Smith</SelectItem>

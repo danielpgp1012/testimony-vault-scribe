@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Dialog, 
@@ -36,8 +35,8 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle className="text-xl font-semibold pr-4">{testimony.title}</DialogTitle>
-            <Badge className={statusColors[testimony.transcriptStatus]}>
-              {testimony.transcriptStatus.charAt(0).toUpperCase() + testimony.transcriptStatus.slice(1)}
+            <Badge className={statusColors[testimony.transcript_status]}>
+              {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
             </Badge>
           </div>
         </DialogHeader>
@@ -46,26 +45,26 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
           <div className="flex items-center gap-2">
             <User className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Speaker:</span>
-            <span className="font-medium">{testimony.speaker}</span>
+            <span className="font-medium">{testimony.church_id}</span>
           </div>
           
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Date:</span>
-            <span className="font-medium">{format(new Date(testimony.date), 'PPP')}</span>
+            <span className="font-medium">{testimony.created_at ? format(new Date(testimony.created_at), 'PPP') : 'Unknown'}</span>
           </div>
           
           <div className="flex items-center gap-2">
             <FileAudio className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Uploaded:</span>
-            <span className="font-medium">{format(new Date(testimony.createdAt), 'PPP p')}</span>
+            <span className="font-medium">{format(new Date(testimony.created_at), 'PPP p')}</span>
           </div>
           
           <div className="flex items-center gap-2">
             <Tag className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Tags:</span>
             <div className="flex flex-wrap gap-1">
-              {testimony.tags.map((tag, i) => (
+              {testimony.tags?.map((tag, i) => (
                 <Badge key={i} variant="outline" className="text-xs">
                   {tag}
                 </Badge>
@@ -78,18 +77,18 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
         
         <div className="flex-1 overflow-y-auto py-4">
           <h3 className="font-semibold mb-2">Transcript</h3>
-          {testimony.transcriptStatus === 'completed' && testimony.transcript ? (
+          {testimony.transcript_status === 'completed' && testimony.transcript ? (
             <div className="whitespace-pre-wrap text-sm">
               {testimony.transcript}
             </div>
-          ) : testimony.transcriptStatus === 'processing' ? (
+          ) : testimony.transcript_status === 'processing' ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-2 text-center">
               <div className="rounded-full bg-blue-100 p-3">
                 <FileAudio className="h-6 w-6 text-blue-600 animate-pulse-slow" />
               </div>
               <p className="text-muted-foreground">Transcription in progress...</p>
             </div>
-          ) : testimony.transcriptStatus === 'failed' ? (
+          ) : testimony.transcript_status === 'failed' ? (
             <div className="text-sm text-red-500">
               Transcription failed. Please try again later.
             </div>

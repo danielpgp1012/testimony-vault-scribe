@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -24,9 +23,9 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
     <Card className="w-full hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold line-clamp-1">{testimony.title}</CardTitle>
-          <Badge className={statusColors[testimony.transcriptStatus]}>
-            {testimony.transcriptStatus.charAt(0).toUpperCase() + testimony.transcriptStatus.slice(1)}
+          <CardTitle className="text-lg font-semibold line-clamp-1">{testimony.church_id}</CardTitle>
+          <Badge className={statusColors[testimony.transcript_status]}>
+            {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
           </Badge>
         </div>
       </CardHeader>
@@ -34,18 +33,18 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <User className="h-4 w-4" />
-            <span>{testimony.speaker}</span>
+            <span>{testimony.church_id}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Calendar className="h-4 w-4" />
-            <span>{format(new Date(testimony.date), 'PPP')}</span>
+            <span>{testimony.created_at ? format(new Date(testimony.created_at), 'PPP') : 'Unknown'}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileAudio className="h-4 w-4" />
-            <span>{testimony.transcriptStatus === 'completed' ? 'Transcribed' : 'Awaiting transcription'}</span>
+            <span>{testimony.transcript_status === 'completed' ? 'Transcribed' : 'Awaiting transcription'}</span>
           </div>
           <div className="flex flex-wrap gap-1 mt-2">
-            {testimony.tags.map((tag, i) => (
+            {testimony.tags?.map((tag, i) => (
               <Badge key={i} variant="outline" className="text-xs">
                 {tag}
               </Badge>
