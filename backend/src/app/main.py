@@ -1,5 +1,6 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 from datetime import datetime
 import uuid, os
@@ -9,9 +10,20 @@ from .deps import get_supabase, get_gcs_client
 from .crud import insert_testimony, check_duplicate_testimony, get_testimony_by_id
 from .tasks import transcribe_testimony
 from .utils import get_audio_metadata
+import logging
+LOGGER = logging.getLogger(__name__)
 
 GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
 app = FastAPI(title="Church Testimony Backend")
+
+# Add CORS middleware to allow requests from frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/testimonies", response_model=TestimonyOut, status_code=201)
 async def create_testimony(

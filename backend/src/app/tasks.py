@@ -83,7 +83,7 @@ def transcribe_testimony(testimony_id: int, gcs_uri: str, sample_rate: int = Non
             audio_channel_count=channels,
             enable_automatic_punctuation=True,
             alternative_language_codes=["fr-FR", "pt-PT"],
-            # model="latest_long" # Optional: Try different models
+            model="latest_long" # Optional: Try different models
         )
         audio = speech.RecognitionAudio(uri=gcs_uri)
         print(f"Sending API request with config: {config}")

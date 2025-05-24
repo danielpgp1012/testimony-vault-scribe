@@ -71,3 +71,24 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## File Upload Implementation
+
+The frontend now sends MP3 file uploads to the backend server running at `http://localhost:8000/testimonies`. 
+
+When a user uploads an MP3 file through the FileUpload component:
+
+1. The frontend collects form data including title, speaker, date, tags, and the audio file
+2. It sends a POST request to the backend endpoint at `http://localhost:8000/testimonies`
+3. The backend processes the audio file, extracts metadata, and begins transcription
+4. If the API call fails, the frontend falls back to using mock data
+
+**Required Environment**:
+- Backend server must be running on port 8000
+- Frontend development server (typically runs on port 3000 or 5173)
+- Required backend environment variables must be set (see .env.example)
+
+```bash
+# To start the backend and frontend:
+docker-compose up -d
+```
