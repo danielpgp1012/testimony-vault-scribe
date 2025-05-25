@@ -74,14 +74,15 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## File Upload Implementation
 
-The frontend now sends MP3 file uploads to the backend server running at `http://localhost:8000/testimonies`. 
+The frontend now supports multiple MP3 file uploads to the backend server running at `http://localhost:8000/testimonies`. 
 
-When a user uploads an MP3 file through the FileUpload component:
+When a user uploads MP3 files through the FileUpload component:
 
-1. The frontend collects form data including title, speaker, date, tags, and the audio file
-2. It sends a POST request to the backend endpoint at `http://localhost:8000/testimonies`
-3. The backend processes the audio file, extracts metadata, and begins transcription
-4. If the API call fails, the frontend falls back to using mock data
+1. The frontend collects form data including church location, recorded date, tags, and multiple audio files
+2. Each file is sent as a separate POST request to the backend endpoint at `http://localhost:8000/testimonies`
+3. The recorded date and metadata apply to all uploaded files in the batch
+4. The backend processes each audio file individually, extracts metadata, and begins transcription
+5. If any API call fails, the frontend falls back to using mock data for that specific file
 
 **Required Environment**:
 - Backend server must be running on port 8000

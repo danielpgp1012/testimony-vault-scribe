@@ -73,7 +73,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 <Button asChild variant="ghost" size="sm">
                   <Link to="/upload">
                     <Upload className="h-4 w-4 mr-2" />
-                    Upload New
+                    Upload Files
                   </Link>
                 </Button>
               </div>

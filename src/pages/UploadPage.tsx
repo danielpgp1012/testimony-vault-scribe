@@ -26,9 +26,9 @@ const UploadPage = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold md:text-3xl">Upload Testimony</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">Upload Testimonies</h1>
         <p className="text-muted-foreground">
-          Upload an MP3 recording of a testimony to transcribe
+          Upload MP3 recordings of testimonies to transcribe
         </p>
       </div>
 
@@ -39,13 +39,15 @@ const UploadPage = () => {
       <div className="bg-secondary/50 rounded-md p-4 mt-8">
         <h3 className="font-medium mb-2">Instructions</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-          <li>File must be in MP3 format</li>
-          <li>Maximum file size: 10 MB</li>
-          <li>Recommended recording length: 2-5 minutes</li>
+          <li>Files must be in MP3 format</li>
+          <li>Maximum file size: 10 MB per file</li>
+          <li>You can upload multiple files at once</li>
+          <li>Recommended recording length: 2-5 minutes per file</li>
           <li>Fill in all required metadata for better organization</li>
+          <li>The recorded date will apply to all uploaded files</li>
+          <li>Each file will be sent as a separate request for processing</li>
           <li>Transcription will begin automatically after upload</li>
-          <li>Recorded date is optional - if not provided, upload date will be used</li>
-          <li>You can upload multiple testimonies - stay on this page to continue uploading</li>
+          <li>You can continue uploading more testimonies after the current batch</li>
         </ul>
       </div>
     </div>
