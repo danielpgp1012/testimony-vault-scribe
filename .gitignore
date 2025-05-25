@@ -5,6 +5,7 @@
 *.wav
 *.egg-info
 *.egg-info/*
+gdrive-creds.json
 logs
 *.log
 npm-debug.log*
@@ -30,3 +31,4 @@ dist-ssr
 *.sw?
 /backend/venv
 .env
+backend/src/testimony_backend.egg-info/PKG-INFO
