@@ -14,10 +14,8 @@ const UploadPage = () => {
       await uploadTestimony(data);
       toast.success('Testimony uploaded successfully!');
       
-      // Redirect to dashboard
-      setTimeout(() => {
-        navigate('/');
-      }, 1500);
+      // Keep user on upload page to allow multiple uploads
+      // No redirect - user can upload more testimonies
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload testimony');
@@ -47,6 +45,7 @@ const UploadPage = () => {
           <li>Fill in all required metadata for better organization</li>
           <li>Transcription will begin automatically after upload</li>
           <li>Recorded date is optional - if not provided, upload date will be used</li>
+          <li>You can upload multiple testimonies - stay on this page to continue uploading</li>
         </ul>
       </div>
     </div>

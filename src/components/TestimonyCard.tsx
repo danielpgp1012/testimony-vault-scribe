@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, FileAudio, Search, File, Clock } from 'lucide-react';
+import { Calendar, User, FileAudio, Search, File, Clock, MapPin } from 'lucide-react';
 import { Testimony } from '@/types/testimony';
 import { format } from 'date-fns';
 
@@ -38,7 +38,7 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold line-clamp-1">
-            {testimony.church_id || 'Unknown Church'}
+            {testimony.user_file_name || 'Unknown File'}
           </CardTitle>
           <Badge className={statusColors[testimony.transcript_status]}>
             {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
@@ -47,13 +47,11 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
       </CardHeader>
       <CardContent className="pb-3">
         <div className="space-y-3">
-          {/* File name */}
-          {testimony.user_file_name && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <File className="h-4 w-4" />
-              <span className="truncate">{testimony.user_file_name}</span>
-            </div>
-          )}
+          {/* Church location */}
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{testimony.church_id || 'Unknown Church'}</span>
+          </div>
           
           {/* Recorded date */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

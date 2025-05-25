@@ -42,7 +42,7 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
         <DialogHeader>
           <div className="flex justify-between items-center">
             <DialogTitle className="text-xl font-semibold pr-4">
-              {testimony.church_id || 'Unknown Church'} - Testimony
+              {testimony.user_file_name || 'Unknown File'}
             </DialogTitle>
             <Badge className={statusColors[testimony.transcript_status]}>
               {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
