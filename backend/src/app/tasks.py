@@ -4,18 +4,54 @@ import traceback
 import tempfile
 from openai import OpenAI
 from google.cloud import storage
+from celery import Celery
 
 from .deps import get_supabase
 from .crud import update_testimony
 
+# --- Celery Configuration ---
+# Create Celery app instance
+celery = Celery('testimony_transcriber')
+
+# Configure broker and backend (Redis)
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+celery.conf.update(
+    broker_url=REDIS_URL,
+    result_backend=REDIS_URL,
+    task_serializer='json',
+    accept_content=['json'],
+    result_serializer='json',
+    timezone='UTC',
+    enable_utc=True,
+    # Task routing
+    task_routes={
+        'transcribe_testimony': {'queue': 'transcription'},
+    },
+    # Worker configuration
+    worker_prefetch_multiplier=1,
+    task_acks_late=True,
+    worker_max_tasks_per_child=10,
+)
+
 # --- Configuration & Clients (Ensure ENV VARS are set) ---
-GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
-try:
-    storage_client = storage.Client()
-    openai_client = OpenAI()  # Uses OPENAI_API_KEY environment variable
-    print("Clients initialized.")
-except Exception as e:
-    raise RuntimeError(f"Failed to initialize clients: {e}")
+GCS_BUCKET_NAME = os.environ.get("GCS_BUCKET_NAME")
+
+# Initialize clients only if not running flower
+SKIP_CLIENT_INIT = os.environ.get("SKIP_CLIENT_INIT", "false").lower() == "true"
+
+if not SKIP_CLIENT_INIT:
+    try:
+        storage_client = storage.Client()
+        openai_client = OpenAI()  # Uses OPENAI_API_KEY environment variable
+        print("Clients initialized.")
+    except Exception as e:
+        print(f"Warning: Failed to initialize clients: {e}")
+        storage_client = None
+        openai_client = None
+else:
+    print("Skipping client initialization (SKIP_CLIENT_INIT=true)")
+    storage_client = None
+    openai_client = None
 
 def update_db_status(testimony_id, status, transcript=None):
     """Update testimony status and transcript in Supabase"""
@@ -55,7 +91,8 @@ def download_from_gcs(gcs_uri, local_path):
         print(f"ERROR downloading from GCS: {e}")
         raise
 
-def transcribe_testimony(testimony_id: int, gcs_uri: str):
+@celery.task(bind=True, max_retries=3, default_retry_delay=60, name='transcribe_testimony')
+def transcribe_testimony(self, testimony_id: int, gcs_uri: str):
     """
     Transcribe testimony audio using OpenAI Whisper API.
     
@@ -63,7 +100,16 @@ def transcribe_testimony(testimony_id: int, gcs_uri: str):
         testimony_id: The ID of the testimony in the database
         gcs_uri: The GCS URI of the audio file
     """
-    print(f"\n--- Transcribing testimony {testimony_id} from {gcs_uri} ---")
+    print(f"\n--- [CELERY TASK] Transcribing testimony {testimony_id} from {gcs_uri} ---")
+    print(f"Task ID: {self.request.id}")
+    
+    # Check if clients are available
+    if storage_client is None or openai_client is None:
+        error_msg = "Required clients not initialized. Cannot process transcription."
+        print(f"ERROR: {error_msg}")
+        update_db_status(testimony_id, "failed")
+        raise RuntimeError(error_msg)
+    
     update_db_status(testimony_id, "processing")
     
     # Create a temporary file for the audio
@@ -102,7 +148,17 @@ def transcribe_testimony(testimony_id: int, gcs_uri: str):
         print(f"--- ERROR processing testimony {testimony_id} ---")
         print(f"Error: {str(e)}")
         traceback.print_exc()
-        update_db_status(testimony_id, "failed")
+        
+        # Retry logic for certain types of errors
+        if "rate limit" in str(e).lower() or "timeout" in str(e).lower():
+            print(f"Retrying task due to {str(e)}...")
+            try:
+                self.retry(countdown=60 * (self.request.retries + 1))
+            except self.MaxRetriesExceededError:
+                print("Max retries exceeded, marking as failed")
+                update_db_status(testimony_id, "failed")
+        else:
+            update_db_status(testimony_id, "failed")
     finally:
         # Clean up temporary file
         if temp_file and os.path.exists(temp_file.name):
@@ -133,7 +189,7 @@ if __name__ == "__main__":
             gcs_uri = f"gs://{GCS_BUCKET_NAME}/{blob_name}"
             
             # Transcribe
-            transcribe_testimony(TEST_ID, gcs_uri)
+            transcribe_testimony.delay(TEST_ID, gcs_uri)
         finally:
             try:
                 # Clean up the test file

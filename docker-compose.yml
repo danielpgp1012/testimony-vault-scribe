@@ -1,6 +1,8 @@
 services:
   redis:
     image: redis:7-alpine
+    ports:
+      - "6379:6379"
 
   backend:
     build: ./backend
@@ -19,7 +21,22 @@ services:
     volumes:
       - ./backend:/app
       - ./backend/gdrive-creds.json:/run/secrets/gdrive-creds.json:ro
-    command: ["celery", "-A", "app.tasks", "worker", "-l", "info"]
+    command: ["celery", "-A", "src.app.tasks", "worker", "--loglevel=info", "--queues=transcription", "--concurrency=2"]
     depends_on:
       - backend
       - redis
+
+  # Optional: Celery monitoring with Flower
+  flower:
+    build: ./backend
+    env_file: .env
+    environment:
+      - SKIP_CLIENT_INIT=true
+    volumes:
+      - ./backend:/app
+    ports:
+      - "5555:5555"
+    command: ["celery", "-A", "src.app.tasks", "flower", "--port=5555"]
+    depends_on:
+      - redis
+      - worker

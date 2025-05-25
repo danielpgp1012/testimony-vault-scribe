@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, User, FileAudio, Tag } from 'lucide-react';
+import { Calendar, MapPin, FileAudio, Tag, File, Clock } from 'lucide-react';
 import { Testimony } from '@/types/testimony';
 import { format } from 'date-fns';
 
@@ -29,12 +29,21 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
     failed: "bg-red-100 text-red-800"
   };
 
+  // Format the recorded date
+  const recordedDate = testimony.recorded_at 
+    ? format(new Date(testimony.recorded_at), 'PPP')
+    : testimony.created_at 
+      ? format(new Date(testimony.created_at), 'PPP')
+      : 'Unknown';
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <div className="flex justify-between items-center">
-            <DialogTitle className="text-xl font-semibold pr-4">{testimony.title}</DialogTitle>
+            <DialogTitle className="text-xl font-semibold pr-4">
+              {testimony.church_id || 'Unknown Church'} - Testimony
+            </DialogTitle>
             <Badge className={statusColors[testimony.transcript_status]}>
               {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
             </Badge>
@@ -43,15 +52,23 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="flex items-center gap-2">
-            <User className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Speaker:</span>
-            <span className="font-medium">{testimony.church_id}</span>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Church Location:</span>
+            <span className="font-medium">{testimony.church_id || 'Unknown'}</span>
           </div>
           
+          {testimony.user_file_name && (
+            <div className="flex items-center gap-2">
+              <File className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">File:</span>
+              <span className="font-medium truncate">{testimony.user_file_name}</span>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Date:</span>
-            <span className="font-medium">{testimony.created_at ? format(new Date(testimony.created_at), 'PPP') : 'Unknown'}</span>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Recorded:</span>
+            <span className="font-medium">{recordedDate}</span>
           </div>
           
           <div className="flex items-center gap-2">
@@ -60,17 +77,19 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             <span className="font-medium">{format(new Date(testimony.created_at), 'PPP p')}</span>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Tag className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Tags:</span>
-            <div className="flex flex-wrap gap-1">
-              {testimony.tags?.map((tag, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
+          {testimony.tags && testimony.tags.length > 0 && (
+            <div className="flex items-center gap-2 md:col-span-2">
+              <Tag className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Tags:</span>
+              <div className="flex flex-wrap gap-1">
+                {testimony.tags.map((tag, i) => (
+                  <Badge key={i} variant="outline" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
         
         <Separator />

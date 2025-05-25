@@ -1,11 +1,18 @@
 from typing import List, Optional
 from datetime import date, datetime
+from enum import Enum
 
 from pydantic import BaseModel
 
+class ChurchLocation(str, Enum):
+    LAUSANNE = "Lausanne"
+    ZURICH = "Zurich"
+    BERN = "Bern"
+    GINEBRA = "Ginebra"
+
 class TestimonyBase(BaseModel):
     # title: str
-    church_id: Optional[str] = None
+    church_id: Optional[ChurchLocation] = ChurchLocation.LAUSANNE
 
     # date: date
     tags: List[str] = []
@@ -20,9 +27,9 @@ class TestimonyOut(TestimonyBase):
     transcript: Optional[str] = None
     created_at: datetime
     updated_at: datetime
+    recorded_at: Optional[date] = None
     
     # Audio metadata fields
     audio_hash: Optional[str] = None
     audio_duration_ms: Optional[int] = None
-    sample_rate: Optional[int] = None
-    channels: Optional[int] = None
+    user_file_name: Optional[str] = None

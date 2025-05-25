@@ -26,6 +26,7 @@ dependencies = [
     "uvicorn[standard]>=0.24.0", # Combined version and extras
     "celery>=5.4.0",
     "redis>=5.0.4",
+    "flower>=2.0.0", # Celery monitoring
     "supabase>=2.4.6",
     "google-api-python-client>=2.127.0",
     "google-cloud-storage>=2.16.0",

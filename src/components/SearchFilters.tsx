@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, Filter, X } from 'lucide-react';
+import { ChurchLocation } from '@/types/testimony';
 
 interface SearchFiltersProps {
   onSearch: (query: string) => void;
@@ -144,19 +144,21 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium">Church ID</label>
+              <label className="text-sm font-medium">Church Location</label>
               <Select
                 value={filters.church_id}
                 onValueChange={(value) => handleFilterChange('church_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select church ID" />
+                  <SelectValue placeholder="Select church location" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Church IDs</SelectItem>
-                  {/* These would be populated from data in a real app */}
-                  <SelectItem value="john-doe">John Doe</SelectItem>
-                  <SelectItem value="jane-smith">Jane Smith</SelectItem>
+                  <SelectItem value="all">All Locations</SelectItem>
+                  {Object.values(ChurchLocation).map((location) => (
+                    <SelectItem key={location} value={location}>
+                      {location}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>

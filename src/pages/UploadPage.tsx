@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileUpload } from '@/components/FileUpload';
 import { TestimonyFormData } from '@/types/testimony';
@@ -43,10 +42,11 @@ const UploadPage = () => {
         <h3 className="font-medium mb-2">Instructions</h3>
         <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
           <li>File must be in MP3 format</li>
-          <li>Maximum file size: 50MB</li>
+          <li>Maximum file size: 10 MB</li>
           <li>Recommended recording length: 2-5 minutes</li>
           <li>Fill in all required metadata for better organization</li>
           <li>Transcription will begin automatically after upload</li>
+          <li>Recorded date is optional - if not provided, upload date will be used</li>
         </ul>
       </div>
     </div>

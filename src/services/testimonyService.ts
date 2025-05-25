@@ -115,8 +115,13 @@ export const uploadTestimony = async (formData: TestimonyFormData): Promise<Test
   // Create a new FormData instance for the HTTP request
   const requestFormData = new FormData();
   
-  // Add optional church_id (Currently not in our form, but backend expects it)
-  requestFormData.append('church_id', formData.church_id); // Uncomment if church_id is needed
+  // Add church_id (convert enum to string value)
+  requestFormData.append('church_id', formData.church_id);
+  
+  // Add recorded_at if provided
+  if (formData.recorded_at) {
+    requestFormData.append('recorded_at', formData.recorded_at);
+  }
   
   // Add tags as a comma-separated string
   // if (formData.tags.length > 0) {
@@ -156,6 +161,7 @@ export const uploadTestimony = async (formData: TestimonyFormData): Promise<Test
       transcript: result.transcript || undefined,
       created_at: result.created_at,
       updated_at: result.updated_at,
+      recorded_at: result.recorded_at,
     };
     
     // Add to the local list to maintain consistency
@@ -186,6 +192,7 @@ export const uploadTestimony = async (formData: TestimonyFormData): Promise<Test
       transcript_status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      recorded_at: formData.recorded_at,
     };
     
     // Add to the list

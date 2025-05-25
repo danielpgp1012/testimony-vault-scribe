@@ -32,43 +32,52 @@ export type Database = {
       }
       testimonies: {
         Row: {
+          audio_duration_ms: number | null
+          audio_hash: string | null
+          channels: number | null
+          church_id: string | null
           created_at: string
-          date: string
-          drive_id: string | null
           id: number
-          speaker: string | null
+          recorded_at: string | null
+          sample_rate: number | null
           storage_url: string | null
           tags: string[] | null
-          title: string
           transcript: string | null
           transcript_status: string
           updated_at: string
+          user_file_name: string | null
         }
         Insert: {
+          audio_duration_ms?: number | null
+          audio_hash?: string | null
+          channels?: number | null
+          church_id?: string | null
           created_at?: string
-          date: string
-          drive_id?: string | null
           id?: number
-          speaker?: string | null
+          recorded_at?: string | null
+          sample_rate?: number | null
           storage_url?: string | null
           tags?: string[] | null
-          title: string
           transcript?: string | null
           transcript_status?: string
           updated_at?: string
+          user_file_name?: string | null
         }
         Update: {
+          audio_duration_ms?: number | null
+          audio_hash?: string | null
+          channels?: number | null
+          church_id?: string | null
           created_at?: string
-          date?: string
-          drive_id?: string | null
           id?: number
-          speaker?: string | null
+          recorded_at?: string | null
+          sample_rate?: number | null
           storage_url?: string | null
           tags?: string[] | null
-          title?: string
           transcript?: string | null
           transcript_status?: string
           updated_at?: string
+          user_file_name?: string | null
         }
         Relationships: []
       }

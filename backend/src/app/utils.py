@@ -5,12 +5,12 @@ from typing import Tuple, Optional
 from pydub import AudioSegment
 from pydub.exceptions import CouldntDecodeError
 
-def get_audio_metadata(file_bytes: bytes, file_name: str = "audio") -> Tuple[Optional[int], Optional[int], Optional[int], Optional[str]]:
+def get_audio_metadata(file_bytes: bytes, file_name: str = "audio") -> Tuple[Optional[int], Optional[str]]:
     """
-    Extract audio metadata and generate a fingerprint hash from file bytes.
+    Extract basic audio metadata and generate a fingerprint hash from file bytes.
     
     Returns:
-        Tuple containing (sample_rate, channels, duration_ms, file_hash)
+        Tuple containing (duration_ms, file_hash)
         Any value can be None if extraction fails
     """
     try:
@@ -22,7 +22,7 @@ def get_audio_metadata(file_bytes: bytes, file_name: str = "audio") -> Tuple[Opt
         if not ext:
             ext = ".mp3"  # Default
             
-        # Extract audio metadata
+        # Extract audio metadata using pydub
         audio = AudioSegment.from_file(file_obj, format=ext.lstrip('.'))
         
         # Generate hash of the first 30 seconds (or whole file if shorter)
@@ -30,10 +30,10 @@ def get_audio_metadata(file_bytes: bytes, file_name: str = "audio") -> Tuple[Opt
         segment_to_hash = audio[:min(30000, len(audio))]
         segment_hash = hashlib.md5(segment_to_hash.raw_data).hexdigest()
         
-        return audio.frame_rate, audio.channels, len(audio), segment_hash
+        return len(audio), segment_hash
     except Exception as e:
         print(f"ERROR getting metadata: {e}")
-        return None, None, None, None
+        return None, None
         
 def calculate_audio_hash(file_bytes: bytes) -> Optional[str]:
     """Calculate MD5 hash of audio file bytes"""

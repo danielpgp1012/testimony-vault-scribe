@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { X, UploadCloud } from 'lucide-react';
@@ -11,16 +12,20 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { TestimonyFormData } from '@/types/testimony';
+import { TestimonyFormData, ChurchLocation } from '@/types/testimony';
 
 interface FileUploadProps {
   onUpload: (data: TestimonyFormData) => Promise<void>;
 }
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
+
 const formSchema = z.object({
-  church_id: z.string().min(1, "Church ID is required"),
-  audioFile: z.instanceof(File, { message: "Audio file is required" }),
-  tags: z.array(z.string()).default([])
+  church_id: z.nativeEnum(ChurchLocation, { message: "Please select a church location" }),
+  audioFile: z.instanceof(File, { message: "Audio file is required" })
+    .refine((file) => file.size <= MAX_FILE_SIZE, "File size must be less than 10 MB"),
+  tags: z.array(z.string()).default([]),
+  recorded_at: z.string().optional()
 });
 
 export function FileUpload({ onUpload }: FileUploadProps) {
@@ -30,25 +35,27 @@ export function FileUpload({ onUpload }: FileUploadProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      church_id: '',
-      tags: []
+      church_id: ChurchLocation.LAUSANNE,
+      tags: [],
+      recorded_at: ''
     },
   });
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      const file = acceptedFiles[0];
-      if (file.type !== 'audio/mpeg' && !file.name.endsWith('.mp3')) {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+    if (rejectedFiles.length > 0) {
+      const rejection = rejectedFiles[0];
+      if (rejection.errors.some((error: any) => error.code === 'file-too-large')) {
+        toast.error('File size must be less than 10 MB');
+        return;
+      }
+      if (rejection.errors.some((error: any) => error.code === 'file-invalid-type')) {
         toast.error('Please upload an MP3 file');
         return;
       }
-      
-      // Set default church_id from filename if empty
-      if (!form.getValues().church_id) {
-        const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
-        form.setValue('church_id', fileName);
-      }
-      
+    }
+    
+    if (acceptedFiles.length > 0) {
+      const file = acceptedFiles[0];
       form.setValue('audioFile', file);
     }
   }, [form]);
@@ -58,7 +65,8 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     accept: {
       'audio/mpeg': ['.mp3']
     },
-    maxFiles: 1
+    maxFiles: 1,
+    maxSize: MAX_FILE_SIZE
   });
 
   const addTag = () => {
@@ -93,7 +101,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     }
 
     if (!values.church_id) {
-      toast.error('Please enter a Church ID');
+      toast.error('Please select a church location');
       return;
     }
 
@@ -102,8 +110,10 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       await onUpload({
         church_id: values.church_id,
         audioFile: values.audioFile,
+        recorded_at: values.recorded_at || undefined,
       });
       form.reset();
+      form.setValue('church_id', ChurchLocation.LAUSANNE); // Reset to default
       toast.success('Testimony uploaded successfully');
     } catch (error) {
       console.error('Upload error:', error);
@@ -139,7 +149,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               ) : (
                 <div className="text-center">
                   <p className="font-medium">Drag &amp; drop your MP3 file here</p>
-                  <p className="text-sm text-muted-foreground">or click to browse</p>
+                  <p className="text-sm text-muted-foreground">or click to browse (max 10 MB)</p>
                 </div>
               )}
             </div>
@@ -149,9 +159,38 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               name="church_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Church ID</FormLabel>
+                  <FormLabel>Church Location</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a church location" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(ChurchLocation).map((location) => (
+                        <SelectItem key={location} value={location}>
+                          {location}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="recorded_at"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Recorded Date (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="Church ID" {...field} />
+                    <Input 
+                      type="date" 
+                      placeholder="When was this recorded?" 
+                      {...field} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

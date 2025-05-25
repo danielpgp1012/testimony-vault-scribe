@@ -16,7 +16,7 @@ const DashboardPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
-    speaker: 'all',
+    church_id: 'all',
     tags: [],
   });
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileAudio, Upload, Search, Filter, FileText } from 'lucide-react';
@@ -23,7 +22,7 @@ const AboutPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Drag and drop MP3 recordings of testimonies along with metadata like speaker name, date, and tags.
+              Drag and drop MP3 recordings of testimonies along with metadata like church location, date, and tags.
             </p>
           </CardContent>
         </Card>
@@ -65,7 +64,7 @@ const AboutPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground">
-              Filter testimonies by speaker, date, tags, or transcription status to find exactly what you need.
+              Filter testimonies by church location, date, tags, or transcription status to find exactly what you need.
             </p>
           </CardContent>
         </Card>

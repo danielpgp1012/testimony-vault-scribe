@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, User, FileAudio, Search } from 'lucide-react';
+import { Calendar, User, FileAudio, Search, File, Clock } from 'lucide-react';
 import { Testimony } from '@/types/testimony';
 import { format } from 'date-fns';
 
@@ -19,36 +19,81 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
     failed: "bg-red-100 text-red-800"
   };
 
+  // Get the first 50 characters of transcription
+  const transcriptPreview = testimony.transcript 
+    ? testimony.transcript.length > 50 
+      ? `${testimony.transcript.substring(0, 50)}...`
+      : testimony.transcript
+    : null;
+
+  // Format the recorded date
+  const recordedDate = testimony.recorded_at 
+    ? format(new Date(testimony.recorded_at), 'PPP')  // Date string in YYYY-MM-DD format
+    : testimony.created_at 
+      ? format(new Date(testimony.created_at), 'PPP')
+      : 'Unknown';
+
   return (
     <Card className="w-full hover:shadow-md transition-shadow">
-      <CardHeader className="pb-2">
+      <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg font-semibold line-clamp-1">{testimony.church_id}</CardTitle>
+          <CardTitle className="text-lg font-semibold line-clamp-1">
+            {testimony.church_id || 'Unknown Church'}
+          </CardTitle>
           <Badge className={statusColors[testimony.transcript_status]}>
             {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
           </Badge>
         </div>
       </CardHeader>
-      <CardContent className="pb-2">
-        <div className="space-y-2">
+      <CardContent className="pb-3">
+        <div className="space-y-3">
+          {/* File name */}
+          {testimony.user_file_name && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <File className="h-4 w-4" />
+              <span className="truncate">{testimony.user_file_name}</span>
+            </div>
+          )}
+          
+          {/* Recorded date */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <User className="h-4 w-4" />
-            <span>{testimony.church_id}</span>
+            <Clock className="h-4 w-4" />
+            <span>Recorded: {recordedDate}</span>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            <span>{testimony.created_at ? format(new Date(testimony.created_at), 'PPP') : 'Unknown'}</span>
-          </div>
+          
+          {/* Tags */}
+          {testimony.tags && testimony.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {testimony.tags.map((tag, i) => (
+                <Badge key={i} variant="outline" className="text-xs">
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          {/* Transcript preview */}
+          {transcriptPreview && (
+            <div className="bg-muted/50 rounded-md p-3 mt-3">
+              <p className="text-sm text-muted-foreground italic">
+                "{transcriptPreview}"
+              </p>
+            </div>
+          )}
+          
+          {/* Status indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileAudio className="h-4 w-4" />
-            <span>{testimony.transcript_status === 'completed' ? 'Transcribed' : 'Awaiting transcription'}</span>
-          </div>
-          <div className="flex flex-wrap gap-1 mt-2">
-            {testimony.tags?.map((tag, i) => (
-              <Badge key={i} variant="outline" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
+            <span>
+              {testimony.transcript_status === 'completed' 
+                ? 'Transcription complete' 
+                : testimony.transcript_status === 'processing'
+                ? 'Transcribing...'
+                : testimony.transcript_status === 'failed'
+                ? 'Transcription failed'
+                : 'Awaiting transcription'
+              }
+            </span>
           </div>
         </div>
       </CardContent>

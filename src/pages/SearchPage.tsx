@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { TestimonyCard } from '@/components/TestimonyCard';
 import { TestimonyDetail } from '@/components/TestimonyDetail';
@@ -62,7 +61,7 @@ const SearchPage = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by keywords, speaker, or content..."
+            placeholder="Search by keywords, church location, or content..."
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

@@ -5,15 +5,17 @@ from typing import List, Optional
 from datetime import datetime
 import uuid, os
 
-from .schemas import TestimonyOut
+from .schemas import TestimonyOut, ChurchLocation
 from .deps import get_supabase, get_gcs_client
 from .crud import insert_testimony, check_duplicate_testimony, get_testimony_by_id
-from .tasks import transcribe_testimony
+from .tasks import transcribe_testimony, celery
 from .utils import get_audio_metadata
 import logging
 LOGGER = logging.getLogger(__name__)
 
 GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB in bytes
+
 app = FastAPI(title="Church Testimony Backend")
 
 # Add CORS middleware to allow requests from frontend
@@ -28,21 +30,49 @@ app.add_middleware(
 @app.post("/testimonies", response_model=TestimonyOut, status_code=201)
 async def create_testimony(
     # title: str = Form(...),
-    church_id: Optional[str] = Form(None),
+    church_id: Optional[str] = Form(ChurchLocation.LAUSANNE.value),
     # date: str = Form(...),
     tags: Optional[str] = Form(None),
     file: UploadFile = File(...),
+    # recorded_at should be timestamp compatible with supabase timestampz
+    recorded_at: Optional[str] = Form(None),
     supabase=Depends(get_supabase),
     gcs_client=Depends(get_gcs_client),
 ):
-    # Read file content
+    # Check file size limit
     file_bytes = await file.read()
+    if len(file_bytes) > MAX_FILE_SIZE:
+        raise HTTPException(status_code=413, detail=f"File size exceeds maximum limit of {MAX_FILE_SIZE / (1024 * 1024):.0f} MB")
+    
+    # Validate church_id against enum values
+    if church_id and church_id not in [location.value for location in ChurchLocation]:
+        raise HTTPException(status_code=400, detail=f"Invalid church_id. Must be one of: {[location.value for location in ChurchLocation]}")
+    
+    # Use Lausanne as default if no church_id provided
+    if not church_id:
+        church_id = ChurchLocation.LAUSANNE.value
     
     # Extract metadata and generate audio fingerprint
-    sample_rate, channels, duration_ms, audio_hash = get_audio_metadata(file_bytes, file.filename)
+    duration_ms, audio_hash = get_audio_metadata(file_bytes, file.filename)
     
     if not audio_hash:
         raise HTTPException(status_code=400, detail="Could not process audio file")
+    
+    # Handle recorded_at - use current date as fallback if not provided
+    now = datetime.utcnow()
+    recorded_at_date = None
+    if recorded_at:
+        try:
+            # Parse the date string (YYYY-MM-DD format)
+            from datetime import date
+            recorded_date = date.fromisoformat(recorded_at)
+            recorded_at_date = recorded_date.isoformat()  # This will be YYYY-MM-DD format
+        except ValueError:
+            # If parsing fails, use current date
+            recorded_at_date = now.date().isoformat()
+    else:
+        # If not provided, use current date
+        recorded_at_date = now.date().isoformat()
     
     # Check for duplicates before uploading to GCS
     duplicate_id = check_duplicate_testimony(supabase, 
@@ -59,8 +89,7 @@ async def create_testimony(
             )
     
     # Upload to GCS if no duplicate was found
-    file_extension = os.path.splitext(file.filename)[1]
-    gcs_filename = f"testimony_audio/{uuid.uuid4()}{file_extension}"
+    gcs_filename = f"testimony_audio/{file.filename}"
     
     bucket = gcs_client.bucket(GCS_BUCKET_NAME)
     blob = bucket.blob(gcs_filename)
@@ -70,30 +99,26 @@ async def create_testimony(
     storage_url = f"gs://{GCS_BUCKET_NAME}/{gcs_filename}"
     
     # 2. Insert pending row in Supabase with audio metadata
-    now = datetime.utcnow().isoformat()
+    now_iso = now.isoformat()
     testimony_data = {
         # "title": title,
         # "date": date,
         "tags": [t.strip() for t in tags.split(",")] if tags else [],
         "storage_url": storage_url,
         "transcript_status": "pending",
-        "created_at": now,
-        "updated_at": now,
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "recorded_at": recorded_at_date,
         "audio_hash": audio_hash,
         "audio_duration_ms": duration_ms,
-        "sample_rate": sample_rate,
-        "channels": channels,
-        "user_file_name": file.filename
+        "user_file_name": file.filename,
+        "church_id": church_id  # Always include church_id now
     }
-    
-    # Only add church_id if it was provided
-    if church_id:
-        testimony_data["church_id"] = church_id
         
     testimony_id = insert_testimony(supabase, testimony_data)
 
     # 3. Kick off async transcription
-    transcribe_testimony(testimony_id, storage_url)
+    task = celery.send_task('transcribe_testimony', args=[testimony_id, storage_url])
 
     row = (
         supabase.table("testimonies")
@@ -103,6 +128,10 @@ async def create_testimony(
         .execute()
         .data
     )
+    
+    # Add task ID to response
+    row["task_id"] = task.id
+    
     return JSONResponse(content=row, status_code=201)
 
 @app.get("/testimonies", response_model=List[TestimonyOut])
@@ -115,3 +144,32 @@ def list_testimonies(supabase=Depends(get_supabase)):
         .data
     )
     return data
+
+@app.get("/tasks/{task_id}")
+def get_task_status(task_id: str):
+    """Get the status of a Celery task"""
+    task_result = celery.AsyncResult(task_id)
+    
+    return {
+        "task_id": task_id,
+        "status": task_result.status,
+        "result": task_result.result if task_result.ready() else None,
+        "traceback": task_result.traceback if task_result.failed() else None,
+    }
+
+@app.get("/worker/stats")
+def get_worker_stats():
+    """Get Celery worker statistics"""
+    try:
+        inspect = celery.control.inspect()
+        stats = inspect.stats()
+        active = inspect.active()
+        reserved = inspect.reserved()
+        
+        return {
+            "stats": stats,
+            "active_tasks": active,
+            "reserved_tasks": reserved,
+        }
+    except Exception as e:
+        return {"error": f"Could not get worker stats: {str(e)}"}
