@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { X, UploadCloud, FileAudio, Trash2 } from 'lucide-react';
+import { X, UploadCloud, FileAudio, Trash2, Calendar } from 'lucide-react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -18,6 +18,11 @@ interface FileUploadProps {
   onUpload: (data: TestimonyFormData) => Promise<void>;
 }
 
+interface FileWithDate {
+  file: File;
+  recorded_at?: string;
+}
+
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
 
 const formSchema = z.object({
@@ -25,22 +30,21 @@ const formSchema = z.object({
   audioFiles: z.array(z.instanceof(File))
     .min(1, "At least one audio file is required")
     .refine((files) => files.every(file => file.size <= MAX_FILE_SIZE), "All files must be less than 10 MB"),
-  tags: z.array(z.string()).default([]),
-  recorded_at: z.string().optional()
+  tags: z.array(z.string()).default([])
 });
 
 export function FileUpload({ onUpload }: FileUploadProps) {
   const [tagInput, setTagInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: boolean}>({});
+  const [fileDates, setFileDates] = useState<{[key: string]: string}>({});
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       church_id: ChurchLocation.LAUSANNE,
       audioFiles: [],
-      tags: [],
-      recorded_at: ''
+      tags: []
     },
   });
 
@@ -75,8 +79,48 @@ export function FileUpload({ onUpload }: FileUploadProps) {
 
   const removeFile = (indexToRemove: number) => {
     const currentFiles = form.getValues().audioFiles;
+    const fileToRemove = currentFiles[indexToRemove];
     const updatedFiles = currentFiles.filter((_, index) => index !== indexToRemove);
     form.setValue('audioFiles', updatedFiles);
+    
+    // Remove the date for this file
+    if (fileToRemove) {
+      const fileKey = `${fileToRemove.name}-${fileToRemove.size}`;
+      setFileDates(prev => {
+        const newDates = { ...prev };
+        delete newDates[fileKey];
+        return newDates;
+      });
+    }
+  };
+
+  const updateFileDate = (file: File, date: string) => {
+    const fileKey = `${file.name}-${file.size}`;
+    setFileDates(prev => {
+      const newDates = { ...prev, [fileKey]: date };
+      
+      // If this is the first date being set, apply it to all unset files
+      if (date && Object.keys(prev).filter(key => prev[key]).length === 0) {
+        const currentFiles = form.getValues().audioFiles;
+        const updatedDates = { ...newDates };
+        
+        currentFiles.forEach(f => {
+          const fKey = `${f.name}-${f.size}`;
+          if (!prev[fKey]) {
+            updatedDates[fKey] = date;
+          }
+        });
+        
+        return updatedDates;
+      }
+      
+      return newDates;
+    });
+  };
+
+  const getFileDate = (file: File): string => {
+    const fileKey = `${file.name}-${file.size}`;
+    return fileDates[fileKey] || '';
   };
 
   const addTag = () => {
@@ -122,15 +166,17 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       let successCount = 0;
       let failureCount = 0;
       
-      // Upload each file separately
+      // Upload each file separately with its individual date
       for (const file of values.audioFiles) {
         try {
           setUploadProgress(prev => ({ ...prev, [file.name]: true }));
           
+          const fileDate = getFileDate(file);
+          
           await onUpload({
             church_id: values.church_id,
             audioFile: file,
-            recorded_at: values.recorded_at || undefined,
+            recorded_at: fileDate || undefined,
           });
           
           successCount++;
@@ -155,6 +201,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       if (successCount > 0) {
         form.reset();
         form.setValue('church_id', ChurchLocation.LAUSANNE); // Reset to default
+        setFileDates({});
       }
     } catch (error) {
       console.error('Upload error:', error);
@@ -166,7 +213,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-3xl mx-auto">
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -200,13 +247,13 @@ export function FileUpload({ onUpload }: FileUploadProps) {
             {audioFiles && audioFiles.length > 0 && (
               <div className="space-y-2">
                 <FormLabel>Selected Files</FormLabel>
-                <div className="max-h-40 overflow-y-auto space-y-2">
+                <div className="max-h-60 overflow-y-auto space-y-3">
                   {audioFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <FileAudio className="h-4 w-4 text-primary" />
-                        <div>
-                          <p className="font-medium text-sm">{file.name}</p>
+                    <div key={`${file.name}-${index}`} className="flex items-center justify-between p-4 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3 flex-1">
+                        <FileAudio className="h-4 w-4 text-primary flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{file.name}</p>
                           <p className="text-xs text-muted-foreground">
                             {(file.size / (1024 * 1024)).toFixed(2)} MB
                             {uploadProgress[file.name] && (
@@ -215,18 +262,35 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => removeFile(index)}
-                        disabled={isUploading}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
+                      {/* Date input for each file */}
+                      <div className="flex items-center gap-2 ml-4">
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          type="date"
+                          value={getFileDate(file)}
+                          onChange={(e) => updateFileDate(file, e.target.value)}
+                          className="w-36 text-xs"
+                          disabled={isUploading}
+                          placeholder="Recorded date"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeFile(index)}
+                          disabled={isUploading}
+                          className="flex-shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  💡 Tip: Setting a date for one file will automatically apply it to all files without dates
+                </p>
               </div>
             )}
 
@@ -251,27 +315,6 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                     </SelectContent>
                   </Select>
                   <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="recorded_at"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Recorded Date (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="date" 
-                      placeholder="When was this recorded?" 
-                      {...field} 
-                    />
-                  </FormControl>
-                  <FormMessage />
-                  <p className="text-xs text-muted-foreground">
-                    This date will apply to all uploaded files
-                  </p>
                 </FormItem>
               )}
             />

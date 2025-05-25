@@ -44,7 +44,8 @@ const UploadPage = () => {
           <li>You can upload multiple files at once</li>
           <li>Recommended recording length: 2-5 minutes per file</li>
           <li>Fill in all required metadata for better organization</li>
-          <li>The recorded date will apply to all uploaded files</li>
+          <li>Each file can have its own recorded date</li>
+          <li>Setting a date for one file will auto-fill all files without dates</li>
           <li>Each file will be sent as a separate request for processing</li>
           <li>Transcription will begin automatically after upload</li>
           <li>You can continue uploading more testimonies after the current batch</li>

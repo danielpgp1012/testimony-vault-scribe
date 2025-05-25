@@ -78,9 +78,9 @@ The frontend now supports multiple MP3 file uploads to the backend server runnin
 
 When a user uploads MP3 files through the FileUpload component:
 
-1. The frontend collects form data including church location, recorded date, tags, and multiple audio files
+1. The frontend collects form data including church location, individual recorded dates per file, tags, and multiple audio files
 2. Each file is sent as a separate POST request to the backend endpoint at `http://localhost:8000/testimonies`
-3. The recorded date and metadata apply to all uploaded files in the batch
+3. Each file can have its own recorded date, with smart auto-filling when the first date is set
 4. The backend processes each audio file individually, extracts metadata, and begins transcription
 5. If any API call fails, the frontend falls back to using mock data for that specific file
 
