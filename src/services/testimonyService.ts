@@ -12,7 +12,7 @@ export const fetchTestimonies = async (): Promise<Testimony[]> => {
     const { data, error } = await supabase
       .from('testimonies')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('recorded_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching testimonies from Supabase:', error);
@@ -25,10 +25,17 @@ export const fetchTestimonies = async (): Promise<Testimony[]> => {
       // Include any frontend-specific mappings/transformations
     })) as Testimony[];
     
-    // Update our local cache
-    testimonies = mappedTestimonies;
+    // Sort by recorded_at in descending order, with fallback to created_at for null values
+    const sortedTestimonies = mappedTestimonies.sort((a, b) => {
+      const dateA = a.recorded_at || a.created_at;
+      const dateB = b.recorded_at || b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
     
-    return mappedTestimonies;
+    // Update our local cache
+    testimonies = sortedTestimonies;
+    
+    return sortedTestimonies;
   } catch (error) {
     console.error('Failed to fetch testimonies from Supabase:', error);
     console.warn('Falling back to mock data');
@@ -51,7 +58,7 @@ export const searchTestimonies = async (query: string): Promise<Testimony[]> => 
       .from('testimonies')
       .select('*')
       .or(`transcript.ilike.%${lowercaseQuery}%`)
-      .order('created_at', { ascending: false });
+      .order('recorded_at', { ascending: false });
     
     if (error) {
       console.error('Error searching testimonies in Supabase:', error);
@@ -60,26 +67,47 @@ export const searchTestimonies = async (query: string): Promise<Testimony[]> => 
     
     // Also check tags (more complex to do in a single query)
     // We filter in memory after initial query
-    return data.filter(testimony => 
+    const filteredTestimonies = data.filter(testimony => 
       testimony.tags && testimony.tags.some(tag => 
         tag.toLowerCase().includes(lowercaseQuery)
       )
     ) as Testimony[];
+    
+    // Sort by recorded_at in descending order, with fallback to created_at for null values
+    return filteredTestimonies.sort((a, b) => {
+      const dateA = a.recorded_at || a.created_at;
+      const dateB = b.recorded_at || b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
   } catch (error) {
     console.error('Failed to search testimonies in Supabase:', error);
     console.warn('Falling back to local search');
     
     // Fallback to searching the local cache
-    if (!query) return testimonies;
+    if (!query) {
+      // Sort testimonies by recorded_at in descending order
+      return testimonies.sort((a, b) => {
+        const dateA = a.recorded_at || a.created_at;
+        const dateB = b.recorded_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    }
     
     const lowercaseQuery = query.toLowerCase();
-    return testimonies.filter(
+    const filteredTestimonies = testimonies.filter(
       testimony => 
         (testimony.title && testimony.title.toLowerCase().includes(lowercaseQuery)) ||
         (testimony.church_id && testimony.church_id.toLowerCase().includes(lowercaseQuery)) ||
         testimony.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
         (testimony.transcript && testimony.transcript.toLowerCase().includes(lowercaseQuery))
     );
+    
+    // Sort by recorded_at in descending order, with fallback to created_at for null values
+    return filteredTestimonies.sort((a, b) => {
+      const dateA = a.recorded_at || a.created_at;
+      const dateB = b.recorded_at || b.created_at;
+      return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
   }
 };
 
@@ -91,7 +119,7 @@ export const filterTestimonies = async (
     tags: string[];
   }
 ): Promise<Testimony[]> => {
-  return testimonies.filter(testimony => {
+  const filteredTestimonies = testimonies.filter(testimony => {
     // Filter by status
     if (filters.status !== 'all' && testimony.transcript_status !== filters.status) {
       return false;
@@ -108,6 +136,13 @@ export const filterTestimonies = async (
     }
     
     return true;
+  });
+  
+  // Sort by recorded_at in descending order, with fallback to created_at for null values
+  return filteredTestimonies.sort((a, b) => {
+    const dateA = a.recorded_at || a.created_at;
+    const dateB = b.recorded_at || b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
   });
 };
 

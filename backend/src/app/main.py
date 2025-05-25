@@ -139,7 +139,7 @@ def list_testimonies(supabase=Depends(get_supabase)):
     data = (
         supabase.table("testimonies")
         .select("*")
-        .order("created_at", desc=True)
+        .order("recorded_at", desc=True)
         .execute()
         .data
     )
