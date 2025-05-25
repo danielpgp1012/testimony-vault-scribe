@@ -1,4 +1,4 @@
-import { Testimony, TestimonyFormData } from '@/types/testimony';
+import { Testimony, TestimonyFormData, PaginatedResponse, PaginationParams } from '@/types/testimony';
 import { supabase } from '@/integrations/supabase/client';
 
 // Simulate delay
@@ -7,47 +7,113 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 // In-memory storage for the mock data
 let testimonies: Testimony[] = [];
 
-export const fetchTestimonies = async (): Promise<Testimony[]> => {
+export const fetchTestimonies = async (
+  params?: PaginationParams & {
+    church_id?: string;
+    transcript_status?: string;
+  }
+): Promise<PaginatedResponse<Testimony>> => {
   try {
-    const { data, error } = await supabase
-      .from('testimonies')
-      .select('*')
-      .order('recorded_at', { ascending: false });
+    // Build query parameters
+    const queryParams = new URLSearchParams();
     
-    if (error) {
-      console.error('Error fetching testimonies from Supabase:', error);
-      throw error;
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.size) queryParams.append('size', params.size.toString());
+    if (params?.church_id) queryParams.append('church_id', params.church_id);
+    if (params?.transcript_status) queryParams.append('transcript_status', params.transcript_status);
+    
+    const url = `http://localhost:8000/testimonies${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`API request failed with status: ${response.status}`);
     }
     
-    // Map the database response to our Testimony type and convert the fields
-    const mappedTestimonies = data.map(testimony => ({
-      ...testimony,
-      // Include any frontend-specific mappings/transformations
-    })) as Testimony[];
+    const paginatedData = await response.json() as PaginatedResponse<Testimony>;
     
-    // Sort by recorded_at in descending order, with fallback to created_at for null values
-    const sortedTestimonies = mappedTestimonies.sort((a, b) => {
-      const dateA = a.recorded_at || a.created_at;
-      const dateB = b.recorded_at || b.created_at;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
+    // Update our local cache with the current page items
+    if (params?.page === 1 || !params?.page) {
+      testimonies = paginatedData.items;
+    }
     
-    // Update our local cache
-    testimonies = sortedTestimonies;
-    
-    return sortedTestimonies;
+    return paginatedData;
   } catch (error) {
-    console.error('Failed to fetch testimonies from Supabase:', error);
-    console.warn('Falling back to mock data');
-    return [...testimonies];
+    console.error('Failed to fetch testimonies from API:', error);
+    console.warn('Falling back to Supabase');
+    
+    try {
+      const { data, error } = await supabase
+        .from('testimonies')
+        .select('*')
+        .order('recorded_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Map the database response to our Testimony type
+      const mappedTestimonies = data.map(testimony => ({
+        ...testimony,
+      })) as Testimony[];
+      
+      // Sort by recorded_at in descending order
+      const sortedTestimonies = mappedTestimonies.sort((a, b) => {
+        const dateA = a.recorded_at || a.created_at;
+        const dateB = b.recorded_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+      
+      // Update our local cache
+      testimonies = sortedTestimonies;
+      
+      // Return as paginated response for consistency
+      const page = params?.page || 1;
+      const size = params?.size || 50;
+      const startIndex = (page - 1) * size;
+      const endIndex = startIndex + size;
+      const items = sortedTestimonies.slice(startIndex, endIndex);
+      
+      return {
+        items,
+        total: sortedTestimonies.length,
+        page,
+        size,
+        pages: Math.ceil(sortedTestimonies.length / size)
+      };
+    } catch (supabaseError) {
+      console.error('Supabase fallback also failed:', supabaseError);
+      console.warn('Falling back to mock data');
+      
+      // Return mock data as paginated response
+      const page = params?.page || 1;
+      const size = params?.size || 50;
+      const startIndex = (page - 1) * size;
+      const endIndex = startIndex + size;
+      const items = testimonies.slice(startIndex, endIndex);
+      
+      return {
+        items,
+        total: testimonies.length,
+        page,
+        size,
+        pages: Math.ceil(testimonies.length / size)
+      };
+    }
   }
+};
+
+// Backward-compatible function for existing code
+export const fetchTestimoniesSimple = async (): Promise<Testimony[]> => {
+  const result = await fetchTestimonies({ page: 1, size: 1000 });
+  return result.items;
 };
 
 export const searchTestimonies = async (query: string): Promise<Testimony[]> => {
   try {
     if (!query) {
       // If no query, return all testimonies
-      return fetchTestimonies();
+      return fetchTestimoniesSimple();
     }
     
     const lowercaseQuery = query.toLowerCase();

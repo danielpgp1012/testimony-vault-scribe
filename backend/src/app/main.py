@@ -1,6 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi_pagination import Page, add_pagination, paginate
+from fastapi_pagination.utils import disable_installed_extensions_check
 from typing import List, Optional
 from datetime import datetime
 import uuid, os
@@ -18,6 +20,9 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB in bytes
 
 app = FastAPI(title="Church Testimony Backend")
 
+# Disable fastapi-pagination extensions check to avoid warnings
+disable_installed_extensions_check()
+
 # Add CORS middleware to allow requests from frontend
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +31,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add pagination to the app
+add_pagination(app)
 
 @app.post("/testimonies", response_model=TestimonyOut, status_code=201)
 async def create_testimony(
@@ -134,16 +142,31 @@ async def create_testimony(
     
     return JSONResponse(content=row, status_code=201)
 
-@app.get("/testimonies", response_model=List[TestimonyOut])
-def list_testimonies(supabase=Depends(get_supabase)):
-    data = (
-        supabase.table("testimonies")
-        .select("*")
-        .order("recorded_at", desc=True)
-        .execute()
-        .data
-    )
-    return data
+@app.get("/testimonies", response_model=Page[TestimonyOut])
+def list_testimonies(
+    church_id: Optional[str] = None,
+    transcript_status: Optional[str] = None,
+    supabase=Depends(get_supabase)
+):
+    query = supabase.table("testimonies").select("*")
+    
+    # Apply filters if provided
+    if church_id:
+        query = query.eq("church_id", church_id)
+    
+    if transcript_status:
+        query = query.eq("transcript_status", transcript_status)
+    
+    data = query.order("recorded_at", desc=True).execute().data
+    return paginate(data)
+
+@app.get("/testimonies/{testimony_id}", response_model=TestimonyOut)
+def get_testimony(testimony_id: int, supabase=Depends(get_supabase)):
+    """Get a specific testimony by ID"""
+    testimony = get_testimony_by_id(supabase, testimony_id)
+    if not testimony:
+        raise HTTPException(status_code=404, detail="Testimony not found")
+    return testimony
 
 @app.get("/tasks/{task_id}")
 def get_task_status(task_id: str):

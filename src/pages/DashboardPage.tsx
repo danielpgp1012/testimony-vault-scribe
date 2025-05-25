@@ -2,17 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { TestimonyCard } from '@/components/TestimonyCard';
 import { TestimonyDetail } from '@/components/TestimonyDetail';
 import { SearchFilters, FilterOptions } from '@/components/SearchFilters';
+import { Pagination } from '@/components/Pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Testimony } from '@/types/testimony';
+import { Testimony, PaginatedResponse } from '@/types/testimony';
 import { fetchTestimonies, searchTestimonies, filterTestimonies } from '@/services/testimonyService';
 import { FileAudio } from 'lucide-react';
 
 const DashboardPage = () => {
-  const [testimonies, setTestimonies] = useState<Testimony[]>([]);
-  const [filteredTestimonies, setFilteredTestimonies] = useState<Testimony[]>([]);
+  const [paginatedData, setPaginatedData] = useState<PaginatedResponse<Testimony> | null>(null);
   const [selectedTestimony, setSelectedTestimony] = useState<Testimony | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(20);
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
@@ -22,14 +24,20 @@ const DashboardPage = () => {
 
   useEffect(() => {
     loadTestimonies();
-  }, []);
+  }, [currentPage, filters]);
 
   const loadTestimonies = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchTestimonies();
-      setTestimonies(data);
-      setFilteredTestimonies(data);
+      const params = {
+        page: currentPage,
+        size: pageSize,
+        church_id: filters.church_id !== 'all' ? filters.church_id : undefined,
+        transcript_status: filters.status !== 'all' ? filters.status : undefined,
+      };
+      
+      const data = await fetchTestimonies(params);
+      setPaginatedData(data);
     } catch (error) {
       console.error('Failed to load testimonies:', error);
     } finally {
@@ -39,19 +47,28 @@ const DashboardPage = () => {
 
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
+    setCurrentPage(1); // Reset to first page when searching
     
-    if (!query && Object.values(filters).every(val => 
-      val === 'all' || (Array.isArray(val) && val.length === 0)
-    )) {
-      setFilteredTestimonies(testimonies);
+    if (!query) {
+      // If no search query, reload with current filters
+      loadTestimonies();
       return;
     }
     
+    // For search, we'll use the old method for now
     setIsLoading(true);
     try {
-      let results = query ? await searchTestimonies(query) : testimonies;
-      results = await filterTestimonies(results, filters);
-      setFilteredTestimonies(results);
+      const results = await searchTestimonies(query);
+      const filteredResults = await filterTestimonies(results, filters);
+      
+      // Convert to paginated format for consistency
+      setPaginatedData({
+        items: filteredResults,
+        total: filteredResults.length,
+        page: 1,
+        size: filteredResults.length,
+        pages: 1
+      });
     } catch (error) {
       console.error('Search error:', error);
     } finally {
@@ -61,20 +78,13 @@ const DashboardPage = () => {
 
   const handleFilterChange = async (newFilters: FilterOptions) => {
     setFilters(newFilters);
-    setIsLoading(true);
-    
-    try {
-      let results = testimonies;
-      if (searchQuery) {
-        results = await searchTestimonies(searchQuery);
-      }
-      results = await filterTestimonies(results, newFilters);
-      setFilteredTestimonies(results);
-    } catch (error) {
-      console.error('Filter error:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    setCurrentPage(1); // Reset to first page when filtering
+    // loadTestimonies will be called by useEffect due to filters change
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    // loadTestimonies will be called by useEffect due to currentPage change
   };
 
   function handleViewDetails(testimony: Testimony) {
@@ -113,16 +123,27 @@ const DashboardPage = () => {
               </div>
             ))}
           </div>
-        ) : filteredTestimonies.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {filteredTestimonies.map((testimony) => (
-              <TestimonyCard
-                key={testimony.id}
-                testimony={testimony}
-                onViewDetails={handleViewDetails}
-              />
-            ))}
-          </div>
+        ) : paginatedData && paginatedData.items.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {paginatedData.items.map((testimony) => (
+                <TestimonyCard
+                  key={testimony.id}
+                  testimony={testimony}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
+            </div>
+            
+            <Pagination
+              currentPage={paginatedData.page}
+              totalPages={paginatedData.pages}
+              totalItems={paginatedData.total}
+              itemsPerPage={paginatedData.size}
+              onPageChange={handlePageChange}
+              isLoading={isLoading}
+            />
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <div className="rounded-full bg-muted p-6 mb-4">

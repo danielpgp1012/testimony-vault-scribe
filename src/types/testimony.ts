@@ -32,3 +32,17 @@ export interface TestimonyFormData {
   audioFile?: File;
   recorded_at?: string;
 }
+
+// Pagination types for fastapi-pagination
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+export interface PaginationParams {
+  page?: number;
+  size?: number;
+}
