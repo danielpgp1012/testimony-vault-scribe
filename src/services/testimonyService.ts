@@ -111,46 +111,94 @@ export const fetchTestimoniesSimple = async (): Promise<Testimony[]> => {
 
 export const searchTestimonies = async (query: string): Promise<Testimony[]> => {
   try {
-    if (!query) {
+    if (!query || query.trim() === '') {
       // If no query, return all testimonies
       return fetchTestimoniesSimple();
     }
     
-    const lowercaseQuery = query.toLowerCase();
-    
-    // Use Supabase search capabilities - this is a simple approach
-    // For more advanced search, you might want to use PostgreSQL full-text search
-    const { data, error } = await supabase
-      .from('testimonies')
-      .select('*')
-      .or(`transcript.ilike.%${lowercaseQuery}%`)
-      .order('recorded_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error searching testimonies in Supabase:', error);
-      throw error;
+    // First try to use the backend search API
+    try {
+      const encodedQuery = encodeURIComponent(query.trim());
+      const response = await fetch(`http://localhost:8000/testimonies/search/${encodedQuery}`);
+      
+      if (!response.ok) {
+        throw new Error(`Backend search failed with status: ${response.status}`);
+      }
+      
+      const searchResults = await response.json() as Testimony[];
+      
+      // Sort by recorded_at in descending order, with fallback to created_at for null values
+      return searchResults.sort((a, b) => {
+        const dateA = a.recorded_at || a.created_at;
+        const dateB = b.recorded_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    } catch (backendError) {
+      console.warn('Backend search failed, falling back to Supabase:', backendError);
+      
+      // Fallback to Supabase search
+      const lowercaseQuery = query.toLowerCase();
+      
+      // Use Supabase search capabilities with proper %like% functionality
+      // Search in transcript, tags, and church_id columns
+      const { data, error } = await supabase
+        .from('testimonies')
+        .select('*')
+        .or(`transcript.ilike.%${lowercaseQuery}%,church_id.ilike.%${lowercaseQuery}%`)
+        .order('recorded_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error searching testimonies in Supabase:', error);
+        throw error;
+      }
+      
+      // Also search in tags array (PostgreSQL array search)
+      // We need to do this separately as array search is more complex
+      const { data: tagData, error: tagError } = await supabase
+        .from('testimonies')
+        .select('*')
+        .contains('tags', [lowercaseQuery])
+        .order('recorded_at', { ascending: false });
+      
+      if (tagError) {
+        console.warn('Error searching tags in Supabase:', tagError);
+      }
+      
+      // Combine results and remove duplicates
+      const allResults = [...(data || []), ...(tagData || [])];
+      const uniqueResults = allResults.filter((testimony, index, self) => 
+        index === self.findIndex(t => t.id === testimony.id)
+      );
+      
+      // Additional filtering for tags that contain the query (case-insensitive partial match)
+      const finalResults = uniqueResults.filter(testimony => {
+        // Check if already matched by transcript or church_id
+        const transcriptMatch = testimony.transcript && 
+          testimony.transcript.toLowerCase().includes(lowercaseQuery);
+        const churchMatch = testimony.church_id && 
+          testimony.church_id.toLowerCase().includes(lowercaseQuery);
+        
+        // Check tags for partial matches
+        const tagMatch = testimony.tags && testimony.tags.some(tag => 
+          tag.toLowerCase().includes(lowercaseQuery)
+        );
+        
+        return transcriptMatch || churchMatch || tagMatch;
+      }) as Testimony[];
+      
+      // Sort by recorded_at in descending order, with fallback to created_at for null values
+      return finalResults.sort((a, b) => {
+        const dateA = a.recorded_at || a.created_at;
+        const dateB = b.recorded_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
     }
-    
-    // Also check tags (more complex to do in a single query)
-    // We filter in memory after initial query
-    const filteredTestimonies = data.filter(testimony => 
-      testimony.tags && testimony.tags.some(tag => 
-        tag.toLowerCase().includes(lowercaseQuery)
-      )
-    ) as Testimony[];
-    
-    // Sort by recorded_at in descending order, with fallback to created_at for null values
-    return filteredTestimonies.sort((a, b) => {
-      const dateA = a.recorded_at || a.created_at;
-      const dateB = b.recorded_at || b.created_at;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
   } catch (error) {
-    console.error('Failed to search testimonies in Supabase:', error);
+    console.error('Failed to search testimonies:', error);
     console.warn('Falling back to local search');
     
     // Fallback to searching the local cache
-    if (!query) {
+    if (!query || query.trim() === '') {
       // Sort testimonies by recorded_at in descending order
       return testimonies.sort((a, b) => {
         const dateA = a.recorded_at || a.created_at;
@@ -164,7 +212,7 @@ export const searchTestimonies = async (query: string): Promise<Testimony[]> => 
       testimony => 
         (testimony.title && testimony.title.toLowerCase().includes(lowercaseQuery)) ||
         (testimony.church_id && testimony.church_id.toLowerCase().includes(lowercaseQuery)) ||
-        testimony.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery)) ||
+        (testimony.tags && testimony.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))) ||
         (testimony.transcript && testimony.transcript.toLowerCase().includes(lowercaseQuery))
     );
     
@@ -173,6 +221,79 @@ export const searchTestimonies = async (query: string): Promise<Testimony[]> => 
       const dateA = a.recorded_at || a.created_at;
       const dateB = b.recorded_at || b.created_at;
       return new Date(dateB).getTime() - new Date(dateA).getTime();
+    });
+  }
+};
+
+// Enhanced search function with additional filters
+export const searchTestimoniesWithFilters = async (
+  query: string,
+  filters?: {
+    church_id?: string;
+    transcript_status?: string;
+  }
+): Promise<Testimony[]> => {
+  try {
+    if (!query || query.trim() === '') {
+      // If no query, return filtered testimonies
+      return fetchTestimoniesSimple();
+    }
+    
+    // First try to use the backend search API with filters
+    try {
+      const encodedQuery = encodeURIComponent(query.trim());
+      const queryParams = new URLSearchParams();
+      
+      if (filters?.church_id) queryParams.append('church_id', filters.church_id);
+      if (filters?.transcript_status) queryParams.append('transcript_status', filters.transcript_status);
+      
+      const url = `http://localhost:8000/testimonies/search/${encodedQuery}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        throw new Error(`Backend search failed with status: ${response.status}`);
+      }
+      
+      const searchResults = await response.json() as Testimony[];
+      
+      // Sort by recorded_at in descending order, with fallback to created_at for null values
+      return searchResults.sort((a, b) => {
+        const dateA = a.recorded_at || a.created_at;
+        const dateB = b.recorded_at || b.created_at;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+    } catch (backendError) {
+      console.warn('Backend search with filters failed, falling back to basic search:', backendError);
+      
+      // Fallback to basic search and then apply filters
+      const searchResults = await searchTestimonies(query);
+      
+      // Apply filters manually
+      return searchResults.filter(testimony => {
+        if (filters?.church_id && testimony.church_id !== filters.church_id) {
+          return false;
+        }
+        if (filters?.transcript_status && testimony.transcript_status !== filters.transcript_status) {
+          return false;
+        }
+        return true;
+      });
+    }
+  } catch (error) {
+    console.error('Failed to search testimonies with filters:', error);
+    
+    // Final fallback to basic search
+    const searchResults = await searchTestimonies(query);
+    
+    // Apply filters manually
+    return searchResults.filter(testimony => {
+      if (filters?.church_id && testimony.church_id !== filters.church_id) {
+        return false;
+      }
+      if (filters?.transcript_status && testimony.transcript_status !== filters.transcript_status) {
+        return false;
+      }
+      return true;
     });
   }
 };

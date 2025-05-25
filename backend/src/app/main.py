@@ -168,6 +168,79 @@ def get_testimony(testimony_id: int, supabase=Depends(get_supabase)):
         raise HTTPException(status_code=404, detail="Testimony not found")
     return testimony
 
+@app.get("/testimonies/search/{query}")
+def search_testimonies(
+    query: str,
+    church_id: Optional[str] = None,
+    transcript_status: Optional[str] = None,
+    supabase=Depends(get_supabase)
+):
+    """Search testimonies using %like% functionality on transcript, tags, and church_id"""
+    if not query or len(query.strip()) == 0:
+        raise HTTPException(status_code=400, detail="Search query cannot be empty")
+    
+    # Build the base query
+    base_query = supabase.table("testimonies").select("*")
+    
+    # Apply filters if provided
+    if church_id:
+        base_query = base_query.eq("church_id", church_id)
+    
+    if transcript_status:
+        base_query = base_query.eq("transcript_status", transcript_status)
+    
+    # Search in transcript and church_id using ilike (case-insensitive LIKE)
+    search_query = f"%{query.lower()}%"
+    transcript_results = (
+        base_query
+        .ilike("transcript", search_query)
+        .order("recorded_at", desc=True)
+        .execute()
+        .data
+    )
+    
+    # Search in church_id
+    church_results = (
+        base_query
+        .ilike("church_id", search_query)
+        .order("recorded_at", desc=True)
+        .execute()
+        .data
+    )
+    
+    # Search in tags (PostgreSQL array contains)
+    # Note: For partial tag matching, we'll need to do this in Python
+    all_testimonies = (
+        base_query
+        .order("recorded_at", desc=True)
+        .execute()
+        .data
+    )
+    
+    # Filter testimonies that have tags containing the search query
+    tag_results = []
+    for testimony in all_testimonies:
+        if testimony.get('tags') and isinstance(testimony['tags'], list):
+            for tag in testimony['tags']:
+                if query.lower() in tag.lower():
+                    tag_results.append(testimony)
+                    break
+    
+    # Combine all results and remove duplicates
+    all_results = transcript_results + church_results + tag_results
+    unique_results = []
+    seen_ids = set()
+    
+    for result in all_results:
+        if result['id'] not in seen_ids:
+            unique_results.append(result)
+            seen_ids.add(result['id'])
+    
+    # Sort by recorded_at in descending order
+    unique_results.sort(key=lambda x: x.get('recorded_at', x.get('created_at', '')), reverse=True)
+    
+    return unique_results
+
 @app.get("/tasks/{task_id}")
 def get_task_status(task_id: str):
     """Get the status of a Celery task"""
