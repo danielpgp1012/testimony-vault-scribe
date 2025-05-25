@@ -1,95 +1,320 @@
-# Welcome to your Lovable project
+# Testimony Vault Scribe
 
-## Project info
+A full-stack application for recording, uploading, and transcribing audio testimonies with automatic speech-to-text processing using OpenAI's Whisper API.
 
-**URL**: https://lovable.dev/projects/8531b9d6-7169-45e7-81f6-10b6c059ee9a
+## 🏗️ Architecture Overview
 
-## How can I edit this code?
+```mermaid
+graph TB
+    subgraph "Frontend (React + Vite)"
+        UI[React UI]
+        Upload[File Upload Component]
+        Search[Search & Filter]
+    end
+    
+    subgraph "Backend Services"
+        API[FastAPI Server<br/>Port 8000]
+        Worker[Celery Worker<br/>Transcription Queue]
+        Monitor[Flower Monitor<br/>Port 5555]
+    end
+    
+    subgraph "Infrastructure"
+        Redis[(Redis<br/>Message Broker<br/>Port 6379)]
+        Supabase[(Supabase<br/>Database)]
+        GCS[(Google Cloud Storage<br/>Audio Files)]
+        OpenAI[OpenAI Whisper API<br/>Transcription]
+    end
+    
+    UI --> API
+    Upload --> API
+    Search --> API
+    API --> Redis
+    Worker --> Redis
+    Worker --> Supabase
+    Worker --> GCS
+    Worker --> OpenAI
+    API --> Supabase
+    API --> GCS
+    Monitor --> Redis
+```
 
-There are several ways of editing your application.
+## 📁 Directory Structure
 
-**Use Lovable**
+```
+testimony-vault-scribe/
+├── backend/                    # Python FastAPI backend
+│   ├── src/app/               # Main application code
+│   │   ├── main.py           # FastAPI application
+│   │   ├── tasks.py          # Celery tasks for transcription
+│   │   ├── crud.py           # Database operations
+│   │   ├── schemas.py        # Pydantic models
+│   │   ├── deps.py           # Dependencies and configuration
+│   │   └── utils.py          # Utility functions
+│   ├── gdrive-creds.json     # Google Cloud service account credentials
+│   ├── requirements.txt      # Python dependencies
+│   ├── Dockerfile           # Backend container configuration
+│   └── run_worker.py        # Development worker script
+├── src/                      # React frontend source
+│   ├── components/          # React components
+│   ├── services/           # API service functions
+│   ├── types/              # TypeScript type definitions
+│   └── integrations/       # External service integrations
+├── supabase/               # Supabase configuration and migrations
+├── docker-compose.yml      # Multi-service container orchestration
+├── package.json           # Frontend dependencies and scripts
+└── .env                   # Environment variables (create this)
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/8531b9d6-7169-45e7-81f6-10b6c059ee9a) and start prompting.
+## 🚀 Quick Start
 
-Changes made via Lovable will be committed automatically to this repo.
+### Prerequisites
 
-**Use your preferred IDE**
+- **Node.js** (v18 or higher) - [Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Docker & Docker Compose** - [Install Docker](https://docs.docker.com/get-docker/)
+- **Google Cloud Storage** account with a bucket
+- **OpenAI API** account with credits
+- **Supabase** project
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### 1. Clone the Repository
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
+```bash
 git clone <YOUR_GIT_URL>
+cd testimony-vault-scribe
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 2. Environment Configuration
 
-# Step 3: Install the necessary dependencies.
-npm i
+Create a `.env` file in the root directory:
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```env
+# Redis Configuration (use 'redis' as hostname for Docker)
+REDIS_URL=redis://redis:6379/0
+
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Google Cloud Storage
+GCS_BUCKET_NAME=your_gcs_bucket_name
+GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gdrive-creds.json
+
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
+
+# Optional Celery Configuration
+CELERY_LOG_LEVEL=info
+SKIP_CLIENT_INIT=false
+```
+
+### 3. Google Cloud Credentials
+
+1. Create a service account in Google Cloud Console
+2. Download the JSON credentials file
+3. **Important**: Rename it to `gdrive-creds.json` and place it in the `backend/` directory
+4. Ensure your service account has access to your GCS bucket
+
+### 4. Install Frontend Dependencies
+
+```bash
+npm install
+```
+
+### 5. Start All Services
+
+```bash
+# Start backend services (Redis, API, Worker, Flower)
+docker-compose up -d
+
+# Start frontend development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔧 Development Setup
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/8531b9d6-7169-45e7-81f6-10b6c059ee9a) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
-
-## File Upload Implementation
-
-The frontend now supports multiple MP3 file uploads to the backend server running at `http://localhost:8000/testimonies`. 
-
-When a user uploads MP3 files through the FileUpload component:
-
-1. The frontend collects form data including church location, individual recorded dates per file, tags, and multiple audio files
-2. Each file is sent as a separate POST request to the backend endpoint at `http://localhost:8000/testimonies`
-3. Each file can have its own recorded date, with smart auto-filling when the first date is set
-4. The backend processes each audio file individually, extracts metadata, and begins transcription
-5. If any API call fails, the frontend falls back to using mock data for that specific file
-
-**Required Environment**:
-- Backend server must be running on port 8000
-- Frontend development server (typically runs on port 3000 or 5173)
-- Required backend environment variables must be set (see .env.example)
+### Backend Only (Local Development)
 
 ```bash
-# To start the backend and frontend:
-docker-compose up -d
+# Build and start all services
+docker compose up --build -d
+
+# Or start individual services:
+# - Redis: docker compose up redis -d
+# - FastAPI: docker compose up api -d
+# - Celery: docker compose up worker -d
+
+### Frontend Only
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
+
+## 🌐 Service URLs
+
+- **Frontend**: http://localhost:5173 (Vite dev server)
+- **Backend API**: http://localhost:8000
+- **API Documentation**: http://localhost:8000/docs
+- **Celery Monitor (Flower)**: http://localhost:5555
+- **Worker Statistics**: http://localhost:8000/worker/stats
+
+## 📋 Required Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `REDIS_URL` | Redis connection string | `redis://redis:6379/0` |
+| `OPENAI_API_KEY` | OpenAI API key for Whisper | `sk-...` |
+| `GCS_BUCKET_NAME` | Google Cloud Storage bucket | `my-testimony-bucket` |
+| `GOOGLE_APPLICATION_CREDENTIALS` | Path to GCS service account JSON | `/run/secrets/gdrive-creds.json` |
+| `SUPABASE_URL` | Supabase project URL | `https://xyz.supabase.co` |
+| `SUPABASE_KEY` | Supabase anonymous key | `eyJ...` |
+| `CELERY_LOG_LEVEL` | Worker logging level (optional) | `info` |
+| `SKIP_CLIENT_INIT` | Skip heavy client initialization (optional) | `false` |
+
+## 🔄 How It Works
+
+1. **Upload**: Users upload MP3 audio files through the React frontend
+2. **Storage**: Files are uploaded to Google Cloud Storage
+3. **Database**: Testimony metadata is stored in Supabase with `transcript_status: "pending"`
+4. **Queue**: A Celery task is queued for transcription processing
+5. **Processing**: Celery worker downloads audio and sends to OpenAI Whisper API
+6. **Update**: Transcript is saved to database with `transcript_status: "completed"`
+7. **Search**: Users can search and filter testimonies by content, church, tags, etc.
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI component library
+- **React Query** - Data fetching and caching
+- **React Hook Form** - Form management
+- **React Router** - Client-side routing
+
+### Backend
+- **FastAPI** - Python web framework
+- **Celery** - Asynchronous task queue
+- **Redis** - Message broker and cache
+- **Supabase** - PostgreSQL database
+- **Google Cloud Storage** - File storage
+- **OpenAI Whisper API** - Speech-to-text transcription
+- **Pydantic** - Data validation
+- **Uvicorn** - ASGI server
+
+### Infrastructure
+- **Docker & Docker Compose** - Containerization
+- **Flower** - Celery monitoring
+- **PostgreSQL** - Database (via Supabase)
+
+## 📊 Monitoring & Debugging
+
+### Check Service Status
+```bash
+# View all services
+docker compose ps
+
+# View logs
+docker compose logs backend
+docker compose logs worker
+docker compose logs redis
+
+# Monitor worker in real-time
+docker compose logs -f worker
+```
+
+### Flower Monitoring Dashboard
+Visit http://localhost:5555 to monitor:
+- Active/completed/failed tasks
+- Worker statistics and performance
+- Task details and results
+- Real-time updates
+
+### API Health Checks
+- Worker stats: `GET http://localhost:8000/worker/stats`
+- Task status: `GET http://localhost:8000/tasks/{task_id}`
+- API docs: http://localhost:8000/docs
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Worker not processing tasks:**
+```bash
+# Check worker logs
+docker-compose logs worker
+
+# Restart worker
+docker-compose restart worker
+```
+
+**Frontend can't connect to backend:**
+- Ensure backend is running on port 8000
+- Check CORS configuration in `backend/src/app/main.py`
+
+**Transcription failures:**
+- Verify OpenAI API key and credits
+- Check Google Cloud Storage permissions
+- Ensure audio files are in supported format (MP3)
+
+**Database connection issues:**
+- Verify Supabase URL and key
+- Check network connectivity
+- Review Supabase project settings
+
+## 📝 API Endpoints
+
+### Upload Testimony
+```http
+POST /testimonies
+Content-Type: multipart/form-data
+
+file: audio_file.mp3
+church_id: optional_church_id
+recorded_at: optional_iso_date
+```
+
+### Search Testimonies
+```http
+GET /testimonies/search/{query}?church_id=optional&transcript_status=optional
+```
+
+### Get Testimonies (Paginated)
+```http
+GET /testimonies?page=1&size=50&church_id=optional&transcript_status=optional
+```
+
+### Check Task Status
+```http
+GET /tasks/{task_id}
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes
+4. Run tests: `npm run lint` (frontend) and `pytest` (backend)
+5. Commit changes: `git commit -m "Description"`
+6. Push to branch: `git push origin feature-name`
+7. Create a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🔗 Links
+
+- **Lovable Project**: https://lovable.dev/projects/8531b9d6-7169-45e7-81f6-10b6c059ee9a
+- **Supabase**: https://supabase.com
+- **OpenAI Whisper**: https://openai.com/research/whisper
+- **Google Cloud Storage**: https://cloud.google.com/storage
