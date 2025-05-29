@@ -65,6 +65,25 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       const currentFiles = form.getValues().audioFiles || [];
       const newFiles = [...currentFiles, ...acceptedFiles];
       form.setValue('audioFiles', newFiles);
+      
+      // Automatically set the last modified date for each new file as the default recorded_at date
+      setFileDates(prev => {
+        const newDates = { ...prev };
+        
+        acceptedFiles.forEach(file => {
+          const fileKey = `${file.name}-${file.size}`;
+          
+          // Only set the date if it's not already set (to preserve manual overrides)
+          if (!newDates[fileKey]) {
+            // Get the last modified date from the file and format it as YYYY-MM-DD
+            const lastModified = new Date(file.lastModified);
+            const formattedDate = lastModified.toISOString().split('T')[0]; // YYYY-MM-DD format
+            newDates[fileKey] = formattedDate;
+          }
+        });
+        
+        return newDates;
+      });
     }
   }, [form]);
 
@@ -289,7 +308,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  💡 Tip: Setting a date for one file will automatically apply it to all files without dates
+                  💡 Tip: Dates are auto-detected from file modification time. You can manually override any date, and setting a date for one file will apply it to all files without dates
                 </p>
               </div>
             )}
