@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import date, datetime
 from enum import Enum
 
@@ -21,7 +21,7 @@ class TestimonyCreate(TestimonyBase):
     pass
 
 class TestimonyOut(TestimonyBase):
-    id: int
+    id: Union[int, str]  # Support both int and str to handle existing data
     storage_url: Optional[str] = None
     transcript_status: str
     transcript: Optional[str] = None
@@ -33,3 +33,9 @@ class TestimonyOut(TestimonyBase):
     audio_hash: Optional[str] = None
     audio_duration_ms: Optional[int] = None
     user_file_name: Optional[str] = None
+
+class ProfileOut(BaseModel):
+    id: str
+    full_name: Optional[str] = None
+    avatar_url: Optional[str] = None
+    updated_at: datetime

@@ -1,13 +1,14 @@
-from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi_pagination import Page, add_pagination, paginate
 from fastapi_pagination.utils import disable_installed_extensions_check
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid, os
+import hashlib
 
-from .schemas import TestimonyOut, ChurchLocation
+from .schemas import TestimonyOut, ChurchLocation, ProfileOut
 from .deps import get_supabase, get_gcs_client
 from .crud import insert_testimony, check_duplicate_testimony, get_testimony_by_id
 from .tasks import transcribe_testimony, celery
@@ -26,7 +27,7 @@ disable_installed_extensions_check()
 # Add CORS middleware to allow requests from frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend origins
+    allow_origins=["*"],  # Allow all origins for development
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -146,6 +147,7 @@ async def create_testimony(
 def list_testimonies(
     church_id: Optional[str] = None,
     transcript_status: Optional[str] = None,
+    tags: Optional[List[str]] = Query(None),
     supabase=Depends(get_supabase)
 ):
     query = supabase.table("testimonies").select("*")
@@ -158,6 +160,15 @@ def list_testimonies(
         query = query.eq("transcript_status", transcript_status)
     
     data = query.order("recorded_at", desc=True).execute().data
+    
+    # Apply tag filtering manually if provided (PostgreSQL array filtering is complex)
+    if tags and len(tags) > 0:
+        data = [
+            testimony for testimony in data
+            if testimony.get('tags') and isinstance(testimony['tags'], list) and
+            any(tag in testimony['tags'] for tag in tags)
+        ]
+    
     return paginate(data)
 
 @app.get("/testimonies/{testimony_id}", response_model=TestimonyOut)
@@ -173,6 +184,7 @@ def search_testimonies(
     query: str,
     church_id: Optional[str] = None,
     transcript_status: Optional[str] = None,
+    tags: Optional[List[str]] = Query(None),
     supabase=Depends(get_supabase)
 ):
     """Search testimonies using %like% functionality on transcript, tags, and church_id"""
@@ -236,6 +248,14 @@ def search_testimonies(
             unique_results.append(result)
             seen_ids.add(result['id'])
     
+    # Apply tag filters if provided
+    if tags and len(tags) > 0:
+        unique_results = [
+            testimony for testimony in unique_results
+            if testimony.get('tags') and isinstance(testimony['tags'], list) and
+            any(tag in testimony['tags'] for tag in tags)
+        ]
+    
     # Sort by recorded_at in descending order
     unique_results.sort(key=lambda x: x.get('recorded_at', x.get('created_at', '')), reverse=True)
     
@@ -269,3 +289,18 @@ def get_worker_stats():
         }
     except Exception as e:
         return {"error": f"Could not get worker stats: {str(e)}"}
+
+@app.get("/profiles/{user_id}", response_model=ProfileOut)
+def get_user_profile(user_id: str, supabase=Depends(get_supabase)):
+    """Get a user profile by user ID"""
+    try:
+        response = supabase.table("profiles").select("*").eq("id", user_id).single().execute()
+        
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Profile not found")
+        
+        return response.data
+    except Exception as e:
+        if "PGRST116" in str(e):  # Supabase error for no rows returned
+            raise HTTPException(status_code=404, detail="Profile not found")
+        raise HTTPException(status_code=500, detail=f"Error fetching profile: {str(e)}")

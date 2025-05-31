@@ -1,9 +1,10 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const API_BASE_URL = 'http://localhost:8000';
 
 export function UserProfile() {
   const [loading, setLoading] = useState(true);
@@ -16,24 +17,29 @@ export function UserProfile() {
       try {
         setLoading(true);
         
-        // Get the current user
+        // Get the current user (still use Supabase for auth)
         const { data: { user } } = await supabase.auth.getUser();
         
         if (user) {
           setUserEmail(user.email);
           
-          // If the user has a profile in the Supabase profiles table
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('full_name, avatar_url')
-            .eq('id', user.id)
-            .single();
+          try {
+            // Get profile from backend API
+            const response = await fetch(`${API_BASE_URL}/profiles/${user.id}`);
             
-          if (profileData) {
-            setUserName(profileData.full_name || user.email?.split('@')[0] || 'User');
-            setUserAvatar(profileData.avatar_url);
-          } else {
-            // Fallback if no profile exists yet
+            if (response.ok) {
+              const profileData = await response.json();
+              setUserName(profileData.full_name || user.email?.split('@')[0] || 'User');
+              setUserAvatar(profileData.avatar_url);
+            } else if (response.status === 404) {
+              // Profile doesn't exist yet, use fallback
+              setUserName(user.email?.split('@')[0] || 'User');
+            } else {
+              throw new Error(`Failed to fetch profile: ${response.status}`);
+            }
+          } catch (profileError) {
+            console.warn('Error fetching profile from API, using fallback:', profileError);
+            // Fallback if API call fails
             setUserName(user.email?.split('@')[0] || 'User');
           }
         }
