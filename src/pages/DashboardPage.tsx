@@ -5,7 +5,7 @@ import { SearchFilters, FilterOptions } from '@/components/SearchFilters';
 import { Pagination } from '@/components/Pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Testimony, PaginatedResponse } from '@/types/testimony';
-import { fetchTestimonies, searchTestimonies, filterTestimonies } from '@/services/testimonyService';
+import { fetchTestimonies, searchTestimonies, filterTestimonies, searchTestimoniesWithFilters } from '@/services/testimonyService';
 import { FileAudio } from 'lucide-react';
 
 const DashboardPage = () => {
@@ -13,6 +13,7 @@ const DashboardPage = () => {
   const [selectedTestimony, setSelectedTestimony] = useState<Testimony | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [searchQuery, setSearchQuery] = useState('');
@@ -28,18 +29,21 @@ const DashboardPage = () => {
 
   const loadTestimonies = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       const params = {
         page: currentPage,
         size: pageSize,
         church_id: filters.church_id !== 'all' ? filters.church_id : undefined,
         transcript_status: filters.status !== 'all' ? filters.status : undefined,
+        tags: filters.tags.length > 0 ? filters.tags : undefined,
       };
       
       const data = await fetchTestimonies(params);
       setPaginatedData(data);
     } catch (error) {
       console.error('Failed to load testimonies:', error);
+      setError('Failed to load testimonies. Please check if the backend server is running.');
     } finally {
       setIsLoading(false);
     }
@@ -48,6 +52,7 @@ const DashboardPage = () => {
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1); // Reset to first page when searching
+    setError(null);
     
     if (!query) {
       // If no search query, reload with current filters
@@ -55,22 +60,26 @@ const DashboardPage = () => {
       return;
     }
     
-    // For search, we'll use the old method for now
+    // Use the enhanced search with filters
     setIsLoading(true);
     try {
-      const results = await searchTestimonies(query);
-      const filteredResults = await filterTestimonies(results, filters);
+      const results = await searchTestimoniesWithFilters(query, {
+        church_id: filters.church_id !== 'all' ? filters.church_id : undefined,
+        transcript_status: filters.status !== 'all' ? filters.status : undefined,
+        tags: filters.tags,
+      });
       
       // Convert to paginated format for consistency
       setPaginatedData({
-        items: filteredResults,
-        total: filteredResults.length,
+        items: results,
+        total: results.length,
         page: 1,
-        size: filteredResults.length,
+        size: results.length,
         pages: 1
       });
     } catch (error) {
       console.error('Search error:', error);
+      setError('Search failed. Please check if the backend server is running.');
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +131,22 @@ const DashboardPage = () => {
                 <Skeleton className="h-10 w-full mt-4" />
               </div>
             ))}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-red-100 p-6 mb-4">
+              <FileAudio className="h-10 w-10 text-red-600" />
+            </div>
+            <h3 className="text-lg font-medium text-red-800">Connection Error</h3>
+            <p className="text-red-600 mt-1 max-w-md">
+              {error}
+            </p>
+            <button 
+              onClick={loadTestimonies}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
           </div>
         ) : paginatedData && paginatedData.items.length > 0 ? (
           <>

@@ -6,7 +6,7 @@ export enum ChurchLocation {
 }
 
 export interface Testimony {
-  id: number;
+  id: number | string;
   church_id?: ChurchLocation | string;
   tags?: string[];
   storage_url?: string;
@@ -31,6 +31,7 @@ export interface TestimonyFormData {
   church_id: ChurchLocation;
   audioFile?: File;
   recorded_at?: string;
+  tags?: string[];
 }
 
 // Pagination types for fastapi-pagination
