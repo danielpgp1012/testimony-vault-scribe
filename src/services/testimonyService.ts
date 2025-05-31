@@ -33,7 +33,7 @@ export const fetchTestimonies = async (
 
 // Backward-compatible function for existing code
 export const fetchTestimoniesSimple = async (): Promise<Testimony[]> => {
-  const result = await fetchTestimonies({ page: 1, size: 1000 });
+  const result = await fetchTestimonies({ page: 1, size: 50 });
   return result.items;
 };
 
@@ -73,7 +73,7 @@ export const searchTestimoniesWithFilters = async (
   if (!query || query.trim() === '') {
     const result = await fetchTestimonies({ 
       page: 1, 
-      size: 1000,
+      size: 50,
       church_id: filters?.church_id,
       transcript_status: filters?.transcript_status,
       tags: filters?.tags
