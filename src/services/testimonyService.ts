@@ -185,7 +185,6 @@ export const uploadTestimony = async (formData: TestimonyFormData): Promise<Test
     id: result.id,
     church_id: formData.church_id,
     tags: result.tags || formData.tags,
-    storage_url: result.storage_url,
     transcript_status: result.transcript_status,
     transcript: result.transcript || undefined,
     created_at: result.created_at,

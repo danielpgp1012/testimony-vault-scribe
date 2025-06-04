@@ -10,7 +10,7 @@ def update_testimony(sb: Client, tid: int, fields: Dict[str, Any]) -> None:
 
 def check_duplicate_testimony(sb: Client,audio_hash: Optional[str], church_id: Optional[str] = None, ) -> Optional[int]:
     """
-    Check if a testimony with the same storage_url or audio_hash already exists.
+    Check if a testimony with the same audio_hash already exists.
     Also checks church_id if provided.
     Returns the testimony ID if found, None otherwise.
     """
