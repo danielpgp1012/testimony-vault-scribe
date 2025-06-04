@@ -18,10 +18,10 @@ const SearchPage = () => {
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
-    
+
     setIsLoading(true);
     setHasSearched(true);
-    
+
     try {
       const results = await searchTestimonies(searchQuery);
       setSearchResults(results);

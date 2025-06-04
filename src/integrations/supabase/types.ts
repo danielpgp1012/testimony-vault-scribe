@@ -40,7 +40,6 @@ export type Database = {
           id: number
           recorded_at: string | null
           sample_rate: number | null
-          storage_url: string | null
           tags: string[] | null
           transcript: string | null
           transcript_status: string
@@ -56,7 +55,6 @@ export type Database = {
           id?: number
           recorded_at?: string | null
           sample_rate?: number | null
-          storage_url?: string | null
           tags?: string[] | null
           transcript?: string | null
           transcript_status?: string
@@ -72,7 +70,6 @@ export type Database = {
           id?: number
           recorded_at?: string | null
           sample_rate?: number | null
-          storage_url?: string | null
           tags?: string[] | null
           transcript?: string | null
           transcript_status?: string

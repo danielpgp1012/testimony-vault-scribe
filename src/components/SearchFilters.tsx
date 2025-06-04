@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -99,8 +99,8 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
         <Button onClick={handleSearch}>
           Search
         </Button>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-1"
         >
@@ -113,16 +113,16 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
         <div className="p-4 border rounded-md space-y-4 bg-background">
           <div className="flex justify-between items-center">
             <h3 className="font-medium">Filters</h3>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={resetFilters}
               className="h-8 text-sm"
             >
               Reset
             </Button>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
@@ -142,7 +142,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
                 </SelectContent>
               </Select>
             </div>
-            
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Church Location</label>
               <Select
@@ -163,7 +163,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
               </Select>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Tags</label>
             <div className="flex">
@@ -174,22 +174,22 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
                 onKeyDown={handleTagKeyDown}
                 className="flex-1"
               />
-              <Button 
-                type="button" 
-                variant="secondary" 
+              <Button
+                type="button"
+                variant="secondary"
                 onClick={addTag}
                 className="ml-2"
               >
                 Add
               </Button>
             </div>
-            
+
             <div className="flex flex-wrap gap-2 mt-2">
               {filters.tags.map((tag, i) => (
                 <Badge key={i} variant="secondary" className="flex items-center gap-1">
                   {tag}
-                  <X 
-                    className="h-3 w-3 cursor-pointer" 
+                  <X
+                    className="h-3 w-3 cursor-pointer"
                     onClick={() => removeTag(tag)}
                   />
                 </Badge>

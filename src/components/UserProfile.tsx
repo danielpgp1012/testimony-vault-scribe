@@ -16,17 +16,17 @@ export function UserProfile() {
     async function getUserProfile() {
       try {
         setLoading(true);
-        
+
         // Get the current user (still use Supabase for auth)
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
           setUserEmail(user.email);
-          
+
           try {
             // Get profile from backend API
             const response = await fetch(`${API_BASE_URL}/profiles/${user.id}`);
-            
+
             if (response.ok) {
               const profileData = await response.json();
               setUserName(profileData.full_name || user.email?.split('@')[0] || 'User');
@@ -49,12 +49,12 @@ export function UserProfile() {
         setLoading(false);
       }
     }
-    
+
     getUserProfile();
   }, []);
 
   // Generate initials for the avatar fallback
-  const initials = userName 
+  const initials = userName
     ? userName.split(' ').map(name => name[0]).join('').toUpperCase()
     : 'U';
 

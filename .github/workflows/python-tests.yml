@@ -1,0 +1,28 @@
+name: Python package
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-tests.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install the latest version of uv and activate the environment
+      uses: astral-sh/setup-uv@v6
+      with:
+        activate-environment: true
+    - name: Install dependencies
+      run: |
+        uv pip install -r backend/requirements.txt
+    - name: Run tests
+      run: |
+        cd backend
+        pytest -q

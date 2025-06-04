@@ -1,5 +1,6 @@
 import logging
 import os
+import uuid
 from datetime import datetime
 from typing import List, Optional
 
@@ -10,14 +11,14 @@ from fastapi_pagination import Page, add_pagination, paginate
 from fastapi_pagination.utils import disable_installed_extensions_check
 
 from .crud import check_duplicate_testimony, get_testimony_by_id, insert_testimony
-from .deps import get_gcs_client, get_supabase
+from .deps import get_supabase
 from .schemas import ChurchLocation, ProfileOut, TestimonyOut
 from .tasks import celery
 from .utils import get_audio_metadata
 
 LOGGER = logging.getLogger(__name__)
 
-GCS_BUCKET_NAME = os.environ["GCS_BUCKET_NAME"]
+UPLOAD_DIR = os.environ.get("AUDIO_UPLOAD_DIR", "/shared/tmp")
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB in bytes
 
 app = FastAPI(title="Church Testimony Backend")
@@ -48,7 +49,6 @@ async def create_testimony(
     # recorded_at should be timestamp compatible with supabase timestampz
     recorded_at: Optional[str] = Form(None),
     supabase=Depends(get_supabase),
-    gcs_client=Depends(get_gcs_client),
 ):
     # Check file size limit
     file_bytes = await file.read()
@@ -91,7 +91,7 @@ async def create_testimony(
         # If not provided, use current date
         recorded_at_date = now.date().isoformat()
 
-    # Check for duplicates before uploading to GCS
+    # Check for duplicates before saving locally
     duplicate_id = check_duplicate_testimony(supabase, church_id=church_id, audio_hash=audio_hash)
 
     if duplicate_id:
@@ -100,15 +100,13 @@ async def create_testimony(
         if existing_testimony and existing_testimony["transcript_status"] == "completed":
             return JSONResponse(content={"id": duplicate_id, **existing_testimony, "duplicate": True}, status_code=200)
 
-    # Upload to GCS if no duplicate was found
-    gcs_filename = f"testimony_audio/{file.filename}"
-
-    bucket = gcs_client.bucket(GCS_BUCKET_NAME)
-    blob = bucket.blob(gcs_filename)
-    blob.upload_from_string(file_bytes, content_type=file.content_type)
-
-    # Create GCS URI
-    storage_url = f"gs://{GCS_BUCKET_NAME}/{gcs_filename}"
+    # Save file to shared temporary directory
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    file_ext = os.path.splitext(file.filename)[1] or ".mp3"
+    temp_name = f"{uuid.uuid4().hex}{file_ext}"
+    temp_path = os.path.join(UPLOAD_DIR, temp_name)
+    with open(temp_path, "wb") as f:
+        f.write(file_bytes)
 
     # 2. Insert pending row in Supabase with audio metadata
     now_iso = now.isoformat()
@@ -116,7 +114,6 @@ async def create_testimony(
         # "title": title,
         # "date": date,
         "tags": [t.strip() for t in tags.split(",")] if tags else [],
-        "storage_url": storage_url,
         "transcript_status": "pending",
         "created_at": now_iso,
         "updated_at": now_iso,
@@ -130,14 +127,15 @@ async def create_testimony(
     testimony_id = insert_testimony(supabase, testimony_data)
 
     # 3. Kick off async transcription
-    task = celery.send_task("transcribe_testimony", args=[testimony_id, storage_url])
+    task = celery.send_task("transcribe_testimony", args=[testimony_id, temp_path])
 
-    row = supabase.table("testimonies").select("*").eq("id", testimony_id).single().execute().data
+    # Get the created testimony to return
+    created_testimony = get_testimony_by_id(supabase, testimony_id)
 
     # Add task ID to response
-    row["task_id"] = task.id
+    created_testimony["task_id"] = task.id
 
-    return JSONResponse(content=row, status_code=201)
+    return JSONResponse(content=created_testimony, status_code=201)
 
 
 @app.get("/testimonies", response_model=Page[TestimonyOut])

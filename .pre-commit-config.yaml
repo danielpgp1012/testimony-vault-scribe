@@ -1,33 +1,22 @@
 repos:
-  - repo: local
+  # Python formatting and linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.12
     hooks:
       - id: ruff
-        name: ruff
-        entry: ruff check --fix
-        language: system
-        types: [python]
+        args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
-        name: ruff-format
-        entry: ruff format
-        language: system
-        types: [python]
-      - id: detect-secrets
-        name: detect-secrets
-        entry: detect-secrets-hook --baseline .secrets.baseline
-        language: system
-        pass_filenames: false
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
       - id: end-of-file-fixer
-        name: end-of-file-fixer
-        entry: end-of-file-fixer
-        language: python
-        types: [text]
       - id: trailing-whitespace
-        name: trailing-whitespace
-        entry: trailing-whitespace-fixer
-        language: python
-        types: [text]
-      - id: check-merge-conflict
-        name: check-merge-conflict
-        entry: check-merge-conflict
-        language: python
-        types: [text]
+
+  # Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']

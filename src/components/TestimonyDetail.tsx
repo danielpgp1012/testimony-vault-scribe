@@ -1,10 +1,10 @@
 import React from 'react';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
   DialogTitle,
-  DialogFooter 
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,9 +30,9 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
   };
 
   // Format the recorded date
-  const recordedDate = testimony.recorded_at 
+  const recordedDate = testimony.recorded_at
     ? format(new Date(testimony.recorded_at), 'PPP')
-    : testimony.created_at 
+    : testimony.created_at
       ? format(new Date(testimony.created_at), 'PPP')
       : 'Unknown';
 
@@ -49,14 +49,14 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             </Badge>
           </div>
         </DialogHeader>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <div className="flex items-center gap-2">
             <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Church Location:</span>
             <span className="font-medium">{testimony.church_id || 'Unknown'}</span>
           </div>
-          
+
           {testimony.user_file_name && (
             <div className="flex items-center gap-2">
               <File className="h-4 w-4 text-muted-foreground" />
@@ -64,19 +64,19 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
               <span className="font-medium truncate">{testimony.user_file_name}</span>
             </div>
           )}
-          
+
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Recorded:</span>
             <span className="font-medium">{recordedDate}</span>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <FileAudio className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Uploaded:</span>
             <span className="font-medium">{format(new Date(testimony.created_at), 'PPP p')}</span>
           </div>
-          
+
           {testimony.tags && testimony.tags.length > 0 && (
             <div className="flex items-center gap-2 md:col-span-2">
               <Tag className="h-4 w-4 text-muted-foreground" />
@@ -91,9 +91,9 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             </div>
           )}
         </div>
-        
+
         <Separator />
-        
+
         <div className="flex-1 overflow-y-auto py-4">
           <h3 className="font-semibold mb-2">Transcript</h3>
           {testimony.transcript_status === 'completed' && testimony.transcript ? (
@@ -117,7 +117,7 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             </div>
           )}
         </div>
-        
+
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Close</Button>
         </DialogFooter>

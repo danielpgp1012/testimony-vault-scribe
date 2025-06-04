@@ -38,7 +38,7 @@ const DashboardPage = () => {
         transcript_status: filters.status !== 'all' ? filters.status : undefined,
         tags: filters.tags.length > 0 ? filters.tags : undefined,
       };
-      
+
       const data = await fetchTestimonies(params);
       setPaginatedData(data);
     } catch (error) {
@@ -53,13 +53,13 @@ const DashboardPage = () => {
     setSearchQuery(query);
     setCurrentPage(1); // Reset to first page when searching
     setError(null);
-    
+
     if (!query) {
       // If no search query, reload with current filters
       loadTestimonies();
       return;
     }
-    
+
     // Use the enhanced search with filters
     setIsLoading(true);
     try {
@@ -68,7 +68,7 @@ const DashboardPage = () => {
         transcript_status: filters.status !== 'all' ? filters.status : undefined,
         tags: filters.tags,
       });
-      
+
       // Convert to paginated format for consistency
       setPaginatedData({
         items: results,
@@ -115,9 +115,9 @@ const DashboardPage = () => {
       </div>
 
       <div className="space-y-6">
-        <SearchFilters 
-          onSearch={handleSearch} 
-          onFilterChange={handleFilterChange} 
+        <SearchFilters
+          onSearch={handleSearch}
+          onFilterChange={handleFilterChange}
         />
 
         {isLoading ? (
@@ -141,7 +141,7 @@ const DashboardPage = () => {
             <p className="text-red-600 mt-1 max-w-md">
               {error}
             </p>
-            <button 
+            <button
               onClick={loadTestimonies}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
             >
@@ -159,7 +159,7 @@ const DashboardPage = () => {
                 />
               ))}
             </div>
-            
+
             <Pagination
               currentPage={paginatedData.page}
               totalPages={paginatedData.pages}
@@ -176,9 +176,9 @@ const DashboardPage = () => {
             </div>
             <h3 className="text-lg font-medium">No testimonies found</h3>
             <p className="text-muted-foreground mt-1 max-w-md">
-              {searchQuery || Object.values(filters).some(val => 
+              {searchQuery || Object.values(filters).some(val =>
                 val !== 'all' && !(Array.isArray(val) && val.length === 0)
-              ) 
+              )
                 ? "Try adjusting your search or filters to find what you're looking for."
                 : "Start by uploading your first testimony."}
             </p>

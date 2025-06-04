@@ -9,7 +9,6 @@ export interface Testimony {
   id: number | string;
   church_id?: ChurchLocation | string;
   tags?: string[];
-  storage_url?: string;
   transcript_status: 'pending' | 'processing' | 'completed' | 'failed';
   transcript?: string;
   created_at: string;
@@ -20,7 +19,7 @@ export interface Testimony {
   sample_rate?: number;
   channels?: number;
   user_file_name?: string;
-  
+
   // Frontend-specific fields (not in backend)
   title?: string;
   driveId?: string;

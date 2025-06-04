@@ -2,7 +2,7 @@
 name = "testimony-backend"
 version = "0.1.0"
 description = "FastAPI + Celery backend for transcribing church testimonies"
-authors = [{"name"="Daniel Pacheco"}]
+authors = [{ name = "Daniel Pacheco" }]
 requires-python = ">=3.11"
 
 # Dependencies must be a list of strings per PEP 621
@@ -12,12 +12,13 @@ dependencies = [
   "celery>=5.4.0",
   "redis>=5.0.4",
   "supabase>=2.4.6",
-  "google-api-python-client>=2.127.0",
-  "google-cloud-speech>=2.26.0",
-  "google-cloud-storage>=2.16.0",
   "python-multipart>=0.0.9",
   "python-dotenv>=1.0.1",
   "pydantic>=2.10.2",
+  "pydub>=0.25.1",
+  "fastapi-pagination>=0.12.28",
+  "httpx<0.28",
+  "openai>=1.84.0",
 ]
 
 [build-system]
@@ -26,4 +27,6 @@ build-backend = "hatchling.build"
 
 [tool.ruff]
 line-length = 120
+
+[tool.ruff.lint]
 extend-select = ["I"]

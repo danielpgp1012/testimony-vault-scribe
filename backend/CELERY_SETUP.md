@@ -189,4 +189,4 @@ docker-compose restart worker
 If flower fails to start due to missing credentials:
 - The flower service uses `SKIP_CLIENT_INIT=true` to avoid initializing heavy clients
 - This allows monitoring without requiring GCS/OpenAI credentials
-- If you still see issues, check: `docker-compose logs flower` 
+- If you still see issues, check: `docker-compose logs flower`

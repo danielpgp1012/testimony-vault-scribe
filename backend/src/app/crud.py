@@ -24,6 +24,9 @@ def check_duplicate_testimony(
     """
 
     query = sb.table("testimonies").select("id").eq("audio_hash", audio_hash)
+    if church_id is not None:
+        query = query.eq("church_id", church_id)
+
     result = query.execute()
 
     if result.data and len(result.data) > 0:

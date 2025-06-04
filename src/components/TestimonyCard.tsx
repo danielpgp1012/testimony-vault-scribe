@@ -20,16 +20,16 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
   };
 
   // Get the first 50 characters of transcription
-  const transcriptPreview = testimony.transcript 
-    ? testimony.transcript.length > 50 
+  const transcriptPreview = testimony.transcript
+    ? testimony.transcript.length > 50
       ? `${testimony.transcript.substring(0, 50)}...`
       : testimony.transcript
     : null;
 
   // Format the recorded date
-  const recordedDate = testimony.recorded_at 
+  const recordedDate = testimony.recorded_at
     ? format(new Date(testimony.recorded_at), 'PPP')  // Date string in YYYY-MM-DD format
-    : testimony.created_at 
+    : testimony.created_at
       ? format(new Date(testimony.created_at), 'PPP')
       : 'Unknown';
 
@@ -52,13 +52,13 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
             <MapPin className="h-4 w-4" />
             <span>{testimony.church_id || 'Unknown Church'}</span>
           </div>
-          
+
           {/* Recorded date */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span>Recorded: {recordedDate}</span>
           </div>
-          
+
           {/* Tags */}
           {testimony.tags && testimony.tags.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -69,7 +69,7 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
               ))}
             </div>
           )}
-          
+
           {/* Transcript preview */}
           {transcriptPreview && (
             <div className="bg-muted/50 rounded-md p-3 mt-3">
@@ -78,13 +78,13 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
               </p>
             </div>
           )}
-          
+
           {/* Status indicator */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <FileAudio className="h-4 w-4" />
             <span>
-              {testimony.transcript_status === 'completed' 
-                ? 'Transcription complete' 
+              {testimony.transcript_status === 'completed'
+                ? 'Transcription complete'
                 : testimony.transcript_status === 'processing'
                 ? 'Transcribing...'
                 : testimony.transcript_status === 'failed'
@@ -96,9 +96,9 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
         </div>
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="outline" 
-          className="w-full" 
+        <Button
+          variant="outline"
+          className="w-full"
           onClick={() => onViewDetails(testimony)}
         >
           <Search className="mr-2 h-4 w-4" />

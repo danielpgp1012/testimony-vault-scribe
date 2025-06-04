@@ -16,7 +16,7 @@ export default function AuthPage() {
         }
       }
     );
-    
+
     return () => subscription.unsubscribe();
   }, [navigate]);
 
