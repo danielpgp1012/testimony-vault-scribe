@@ -13,12 +13,10 @@ def check_duplicate_testimony(
     audio_hash: Optional[str],
     church_id: Optional[str] = None,
 ) -> Optional[int]:
-    """Check if a testimony with the same audio_hash already exists.
-
+    """Check if a testimony with the same ``audio_hash`` already exists.
     If ``church_id`` is provided, the lookup is restricted to that church.
     Returns the testimony ID if found, ``None`` otherwise.
     """
-
     query = sb.table("testimonies").select("id").eq("audio_hash", audio_hash)
     if church_id is not None:
         query = query.eq("church_id", church_id)

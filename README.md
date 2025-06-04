@@ -21,7 +21,6 @@ graph TB
     subgraph "Infrastructure"
         Redis[(Redis<br/>Message Broker<br/>Port 6379)]
         Supabase[(Supabase<br/>Database)]
-        GCS[(Google Cloud Storage<br/>Audio Files)]
         OpenAI[OpenAI Whisper API<br/>Transcription]
     end
     
@@ -31,10 +30,8 @@ graph TB
     API --> Redis
     Worker --> Redis
     Worker --> Supabase
-    Worker --> GCS
     Worker --> OpenAI
     API --> Supabase
-    API --> GCS
     Monitor --> Redis
 ```
 
@@ -50,7 +47,6 @@ testimony-vault-scribe/
 │   │   ├── schemas.py        # Pydantic models
 │   │   ├── deps.py           # Dependencies and configuration
 │   │   └── utils.py          # Utility functions
-│   ├── gdrive-creds.json     # Google Cloud service account credentials
 │   ├── requirements.txt      # Python dependencies
 │   ├── Dockerfile           # Backend container configuration
 │   └── run_worker.py        # Development worker script
@@ -71,7 +67,6 @@ testimony-vault-scribe/
 
 - **Node.js** (v18 or higher) - [Install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 - **Docker & Docker Compose** - [Install Docker](https://docs.docker.com/get-docker/)
-- **Google Cloud Storage** account with a bucket
 - **OpenAI API** account with credits
 - **Supabase** project
 
@@ -93,9 +88,8 @@ REDIS_URL=redis://redis:6379/0
 # OpenAI Configuration
 OPENAI_API_KEY=your_openai_api_key_here
 
-# Google Cloud Storage
-GCS_BUCKET_NAME=your_gcs_bucket_name
-GOOGLE_APPLICATION_CREDENTIALS=/run/secrets/gdrive-creds.json
+# Directory where uploaded audio will be stored temporarily
+AUDIO_UPLOAD_DIR=/shared/tmp
 
 # Supabase Configuration
 SUPABASE_URL=https://your-project.supabase.co
@@ -106,14 +100,7 @@ CELERY_LOG_LEVEL=info
 SKIP_CLIENT_INIT=false
 ```
 
-### 3. Google Cloud Credentials
-
-1. Create a service account in Google Cloud Console
-2. Download the JSON credentials file
-3. **Important**: Rename it to `gdrive-creds.json` and place it in the `backend/` directory
-4. Ensure your service account has access to your GCS bucket
-
-### 4. Install Frontend Dependencies
+### 3. Install Frontend Dependencies
 
 ```bash
 npm install
@@ -128,6 +115,9 @@ docker-compose up -d
 # Start frontend development server
 npm run dev
 ```
+
+Uploaded audio files are stored in a shared Docker volume (`shared-data`) mounted
+at `/shared` for both the API and worker containers.
 
 ## 🔧 Development Setup
 
@@ -172,17 +162,16 @@ npm run preview
 |----------|-------------|---------|
 | `REDIS_URL` | Redis connection string | `redis://redis:6379/0` |
 | `OPENAI_API_KEY` | OpenAI API key for Whisper | `sk-...` |
-| `GCS_BUCKET_NAME` | Google Cloud Storage bucket | `my-testimony-bucket` |
-| `GOOGLE_APPLICATION_CREDENTIALS` | Path to GCS service account JSON | `/run/secrets/gdrive-creds.json` |
 | `SUPABASE_URL` | Supabase project URL | `https://xyz.supabase.co` |
 | `SUPABASE_KEY` | Supabase anonymous key | `eyJ...` |
+| `AUDIO_UPLOAD_DIR` | Shared directory for temporary audio files | `/shared/tmp` |
 | `CELERY_LOG_LEVEL` | Worker logging level (optional) | `info` |
 | `SKIP_CLIENT_INIT` | Skip heavy client initialization (optional) | `false` |
 
 ## 🔄 How It Works
 
 1. **Upload**: Users upload MP3 audio files through the React frontend
-2. **Storage**: Files are uploaded to Google Cloud Storage
+2. **Storage**: Files are saved temporarily on a shared volume
 3. **Database**: Testimony metadata is stored in Supabase with `transcript_status: "pending"`
 4. **Queue**: A Celery task is queued for transcription processing
 5. **Processing**: Celery worker downloads audio and sends to OpenAI Whisper API
@@ -206,7 +195,6 @@ npm run preview
 - **Celery** - Asynchronous task queue
 - **Redis** - Message broker and cache
 - **Supabase** - PostgreSQL database
-- **Google Cloud Storage** - File storage
 - **OpenAI Whisper API** - Speech-to-text transcription
 - **Pydantic** - Data validation
 - **Uvicorn** - ASGI server
@@ -263,7 +251,6 @@ docker-compose restart worker
 
 **Transcription failures:**
 - Verify OpenAI API key and credits
-- Check Google Cloud Storage permissions
 - Ensure audio files are in supported format (MP3)
 
 **Database connection issues:**
@@ -317,4 +304,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - **Lovable Project**: https://lovable.dev/projects/8531b9d6-7169-45e7-81f6-10b6c059ee9a
 - **Supabase**: https://supabase.com
 - **OpenAI Whisper**: https://openai.com/research/whisper
-- **Google Cloud Storage**: https://cloud.google.com/storage

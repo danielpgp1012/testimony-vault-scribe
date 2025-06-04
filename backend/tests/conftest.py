@@ -9,15 +9,15 @@ if ROOT_DIR not in sys.path:
 # Default environment variables required by the app during import
 os.environ.setdefault("SUPABASE_URL", "http://test")
 os.environ.setdefault("SUPABASE_KEY", "key")
-os.environ.setdefault("GCS_BUCKET_NAME", "bucket")
-os.environ.setdefault("GOOGLE_APPLICATION_CREDENTIALS", "/tmp/fake.json")
+
 
 from fastapi.testclient import TestClient
 from fastapi_pagination import add_pagination
 import pytest
 
 from app.main import app
-from app.deps import get_supabase, get_gcs_client
+from app.deps import get_supabase
+
 
 
 class FakeResult:
@@ -60,29 +60,12 @@ class FakeSupabase:
         return FakeQuery(self.items)
 
 
-def get_fake_gcs_client():
-    class _C:
-        def bucket(self, *_):
-            class B:
-                def blob(self, *_):
-                    class BL:
-                        def upload_from_string(self, *a, **k):
-                            pass
-
-                    return BL()
-
-            return B()
-
-    return _C()
-
-
 @pytest.fixture
 def client_factory():
     """Return a TestClient with dependencies overridden."""
 
     def _factory(items):
         app.dependency_overrides[get_supabase] = lambda: FakeSupabase(items)
-        app.dependency_overrides[get_gcs_client] = get_fake_gcs_client
         add_pagination(app)
         return TestClient(app)
 

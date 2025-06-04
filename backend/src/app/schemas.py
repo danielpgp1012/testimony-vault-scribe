@@ -22,7 +22,6 @@ class TestimonyCreate(TestimonyBase):
 
 class TestimonyOut(TestimonyBase):
     id: Union[int, str]  # Support both int and str to handle existing data
-    storage_url: Optional[str] = None
     transcript_status: str
     transcript: Optional[str] = None
     created_at: datetime

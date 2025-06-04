@@ -9,7 +9,6 @@ export interface Testimony {
   id: number | string;
   church_id?: ChurchLocation | string;
   tags?: string[];
-  storage_url?: string;
   transcript_status: 'pending' | 'processing' | 'completed' | 'failed';
   transcript?: string;
   created_at: string;

@@ -9,7 +9,7 @@ services:
     env_file: .env
     volumes:
       - ./backend:/app
-      - ./backend/gdrive-creds.json:/run/secrets/gdrive-creds.json:ro
+      - shared-data:/shared
     ports:
       - "8000:8000"
     depends_on:
@@ -20,7 +20,7 @@ services:
     env_file: .env
     volumes:
       - ./backend:/app
-      - ./backend/gdrive-creds.json:/run/secrets/gdrive-creds.json:ro
+      - shared-data:/shared
     command: ["celery", "-A", "src.app.tasks", "worker", "--loglevel=info", "--queues=transcription", "--concurrency=2"]
     depends_on:
       - backend
@@ -40,3 +40,7 @@ services:
     depends_on:
       - redis
       - worker
+
+volumes:
+  shared-data:
+

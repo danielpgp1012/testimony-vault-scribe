@@ -3,9 +3,6 @@ uvicorn[standard]==0.24.0
 celery==5.4.0
 redis==5.0.4
 supabase==2.4.6
-google-api-python-client==2.127.0
-google-cloud-speech==2.26.0
-google-cloud-storage==2.16.0
 python-multipart==0.0.9
 python-dotenv==1.0.1
 pydantic==2.10.2
