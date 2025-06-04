@@ -134,16 +134,16 @@ const DashboardPage = () => {
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="rounded-full bg-red-100 p-6 mb-4">
+            <div className="rounded-full bg-red-50 p-6 mb-4 border border-red-200">
               <FileAudio className="h-10 w-10 text-red-600" />
             </div>
-            <h3 className="text-lg font-medium text-red-800">Connection Error</h3>
+            <h3 className="text-lg font-medium text-red-700">Connection Error</h3>
             <p className="text-red-600 mt-1 max-w-md">
               {error}
             </p>
             <button
               onClick={loadTestimonies}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
             >
               Retry
             </button>

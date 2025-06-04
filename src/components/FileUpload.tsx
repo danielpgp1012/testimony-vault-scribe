@@ -242,7 +242,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                 "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
                 "hover:border-primary/50 hover:bg-muted/50",
                 isDragActive && "border-primary bg-muted",
-                audioFiles && audioFiles.length > 0 && "border-green-500 bg-green-50"
+                audioFiles && audioFiles.length > 0 && "border-emerald-500 bg-emerald-50"
               )}
             >
               <input {...getInputProps()} />
@@ -276,7 +276,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                           <p className="text-xs text-muted-foreground">
                             {(file.size / (1024 * 1024)).toFixed(2)} MB
                             {uploadProgress[file.name] && (
-                              <span className="ml-2 text-blue-600">Uploading...</span>
+                              <span className="ml-2 text-primary">Uploading...</span>
                             )}
                           </p>
                         </div>
