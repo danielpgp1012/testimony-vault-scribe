@@ -10,6 +10,7 @@ class ChurchLocation(str, Enum):
     ZURICH = "Zurich"
     BERN = "Bern"
     GINEBRA = "Ginebra"
+    US = "US"
 
 
 class TestimonyBase(BaseModel):

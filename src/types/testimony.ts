@@ -2,7 +2,8 @@ export enum ChurchLocation {
   LAUSANNE = "Lausanne",
   ZURICH = "Zurich",
   BERN = "Bern",
-  GINEBRA = "Ginebra"
+  GINEBRA = "Ginebra",
+  US = "US"
 }
 
 export interface Testimony {
