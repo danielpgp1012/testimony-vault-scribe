@@ -14,7 +14,6 @@ def check_duplicate_testimony(
     church_id: Optional[str] = None,
 ) -> Optional[int]:
     """Check if a testimony with the same ``audio_hash`` already exists.
-
     If ``church_id`` is provided, the lookup is restricted to that church.
     Returns the testimony ID if found, ``None`` otherwise.
     """

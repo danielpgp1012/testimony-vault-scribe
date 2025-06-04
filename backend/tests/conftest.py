@@ -10,12 +10,14 @@ if ROOT_DIR not in sys.path:
 os.environ.setdefault("SUPABASE_URL", "http://test")
 os.environ.setdefault("SUPABASE_KEY", "key")
 
+
 from fastapi.testclient import TestClient
 from fastapi_pagination import add_pagination
 import pytest
 
 from app.main import app
 from app.deps import get_supabase
+
 
 
 class FakeResult:
