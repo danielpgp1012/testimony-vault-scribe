@@ -1,7 +1,3 @@
-import pytest
-from app.main import app
-
-
 def test_list_testimonies_pagination(client_factory):
     items = [
         {

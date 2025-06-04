@@ -21,14 +21,14 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
-  
+
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
     { icon: Upload, label: 'Upload', path: '/upload' },
     { icon: Search, label: 'Search', path: '/search' },
     { icon: Info, label: 'About', path: '/about' },
   ];
-  
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -39,7 +39,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <h1 className="text-xl font-semibold">Testimony Vault</h1>
             </div>
           </SidebarHeader>
-          
+
           <SidebarContent>
             <SidebarMenu>
               {menuItems.map((item) => (
@@ -54,14 +54,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               ))}
             </SidebarMenu>
           </SidebarContent>
-          
+
           <SidebarFooter className="p-4">
             <div className="text-xs text-center text-muted-foreground">
               Testimony Vault © {new Date().getFullYear()}
             </div>
           </SidebarFooter>
         </Sidebar>
-        
+
         <div className="flex-1 flex flex-col h-screen overflow-hidden">
           <header className="h-14 border-b flex items-center px-4 sticky top-0 z-10 bg-background">
             <SidebarTrigger className="mr-2 lg:hidden" />
@@ -79,7 +79,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
           </header>
-          
+
           <main className="flex-1 overflow-auto p-4 md:p-6">
             {children}
           </main>

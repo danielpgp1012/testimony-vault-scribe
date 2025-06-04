@@ -13,7 +13,7 @@ const UploadPage = () => {
       // In a real app, this would handle the full upload flow
       await uploadTestimony(data);
       toast.success('Testimony uploaded successfully!');
-      
+
       // Keep user on upload page to allow multiple uploads
       // No redirect - user can upload more testimonies
     } catch (error) {

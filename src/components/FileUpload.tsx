@@ -60,19 +60,19 @@ export function FileUpload({ onUpload }: FileUploadProps) {
         return;
       }
     }
-    
+
     if (acceptedFiles.length > 0) {
       const currentFiles = form.getValues().audioFiles || [];
       const newFiles = [...currentFiles, ...acceptedFiles];
       form.setValue('audioFiles', newFiles);
-      
+
       // Automatically set the last modified date for each new file as the default recorded_at date
       setFileDates(prev => {
         const newDates = { ...prev };
-        
+
         acceptedFiles.forEach(file => {
           const fileKey = `${file.name}-${file.size}`;
-          
+
           // Only set the date if it's not already set (to preserve manual overrides)
           if (!newDates[fileKey]) {
             // Get the last modified date from the file and format it as YYYY-MM-DD
@@ -81,7 +81,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
             newDates[fileKey] = formattedDate;
           }
         });
-        
+
         return newDates;
       });
     }
@@ -101,7 +101,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     const fileToRemove = currentFiles[indexToRemove];
     const updatedFiles = currentFiles.filter((_, index) => index !== indexToRemove);
     form.setValue('audioFiles', updatedFiles);
-    
+
     // Remove the date for this file
     if (fileToRemove) {
       const fileKey = `${fileToRemove.name}-${fileToRemove.size}`;
@@ -117,22 +117,22 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     const fileKey = `${file.name}-${file.size}`;
     setFileDates(prev => {
       const newDates = { ...prev, [fileKey]: date };
-      
+
       // If this is the first date being set, apply it to all unset files
       if (date && Object.keys(prev).filter(key => prev[key]).length === 0) {
         const currentFiles = form.getValues().audioFiles;
         const updatedDates = { ...newDates };
-        
+
         currentFiles.forEach(f => {
           const fKey = `${f.name}-${f.size}`;
           if (!prev[fKey]) {
             updatedDates[fKey] = date;
           }
         });
-        
+
         return updatedDates;
       }
-      
+
       return newDates;
     });
   };
@@ -167,7 +167,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const values = form.getValues();
-    
+
     if (!values.audioFiles || values.audioFiles.length === 0) {
       toast.error('Please select at least one audio file');
       return;
@@ -181,23 +181,23 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     try {
       setIsUploading(true);
       setUploadProgress({});
-      
+
       let successCount = 0;
       let failureCount = 0;
-      
+
       // Upload each file separately with its individual date
       for (const file of values.audioFiles) {
         try {
           setUploadProgress(prev => ({ ...prev, [file.name]: true }));
-          
+
           const fileDate = getFileDate(file);
-          
+
           await onUpload({
             church_id: values.church_id,
             audioFile: file,
             recorded_at: fileDate || undefined,
           });
-          
+
           successCount++;
           setUploadProgress(prev => ({ ...prev, [file.name]: false }));
         } catch (error) {
@@ -206,7 +206,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
           setUploadProgress(prev => ({ ...prev, [file.name]: false }));
         }
       }
-      
+
       // Show summary toast
       if (successCount > 0 && failureCount === 0) {
         toast.success(`All ${successCount} testimonies uploaded successfully`);
@@ -215,7 +215,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       } else {
         toast.error('All uploads failed');
       }
-      
+
       // Reset form only if at least one upload succeeded
       if (successCount > 0) {
         form.reset();
@@ -236,8 +236,8 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       <CardContent className="pt-6">
         <Form {...form}>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div 
-              {...getRootProps()} 
+            <div
+              {...getRootProps()}
               className={cn(
                 "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors",
                 "hover:border-primary/50 hover:bg-muted/50",
@@ -281,7 +281,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Date input for each file */}
                       <div className="flex items-center gap-2 ml-4">
                         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
@@ -348,9 +348,9 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                   placeholder="Add tags (press Enter)"
                   className="flex-1"
                 />
-                <Button 
-                  type="button" 
-                  onClick={addTag} 
+                <Button
+                  type="button"
+                  onClick={addTag}
                   variant="secondary"
                   className="ml-2"
                 >
@@ -361,8 +361,8 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                 {form.watch('tags').map((tag, i) => (
                   <Badge key={i} variant="secondary" className="flex items-center gap-1">
                     {tag}
-                    <X 
-                      className="h-3 w-3 cursor-pointer" 
+                    <X
+                      className="h-3 w-3 cursor-pointer"
                       onClick={() => removeTag(tag)}
                     />
                   </Badge>
@@ -370,9 +370,9 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               </div>
             </FormItem>
 
-            <Button 
-              type="submit" 
-              className="w-full" 
+            <Button
+              type="submit"
+              className="w-full"
               disabled={isUploading || !audioFiles || audioFiles.length === 0}
             >
               {isUploading ? `Uploading ${audioFiles?.length || 0} file${audioFiles?.length !== 1 ? 's' : ''}...` : `Upload ${audioFiles?.length || 0} Testimon${audioFiles?.length !== 1 ? 'ies' : 'y'}`}

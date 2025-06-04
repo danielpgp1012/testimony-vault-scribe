@@ -20,7 +20,7 @@ export interface Testimony {
   sample_rate?: number;
   channels?: number;
   user_file_name?: string;
-  
+
   // Frontend-specific fields (not in backend)
   title?: string;
   driveId?: string;

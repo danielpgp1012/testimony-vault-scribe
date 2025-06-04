@@ -11,14 +11,14 @@ client = OpenAI()  # Uses OPENAI_API_KEY environment variable
 
 def test_whisper_transcription(audio_file_path: str):
     """Test OpenAI Whisper transcription with a local audio file"""
-    
+
     if not os.path.exists(audio_file_path):
         print(f"Error: Audio file not found: {audio_file_path}")
         return
-    
+
     try:
         print(f"Testing Whisper transcription with: {audio_file_path}")
-        
+
         with open(audio_file_path, "rb") as audio_file:
             print("Sending to OpenAI Whisper API...")
             transcription = client.audio.transcriptions.create(
@@ -27,25 +27,25 @@ def test_whisper_transcription(audio_file_path: str):
                 language="es",  # Spanish as primary language
                 response_format="text"
             )
-        
+
         transcript = transcription.strip() if transcription else ""
-        
+
         if transcript:
             print("✅ Transcription successful!")
             print(f"Transcript: {transcript}")
         else:
             print("⚠️  Transcription result is empty")
-            
+
     except Exception as e:
         print(f"❌ Error during transcription: {e}")
 
 if __name__ == "__main__":
     # Test with your sample audio file
     test_file = "sample_audio_files/2024.11.24.Testimonio 2.mp3"
-    
+
     # Check if OPENAI_API_KEY is set
     if not os.environ.get("OPENAI_API_KEY"):
         print("❌ Error: OPENAI_API_KEY environment variable not set")
         print("Please set your OpenAI API key: export OPENAI_API_KEY='your-api-key'")
     else:
-        test_whisper_transcription(test_file) 
+        test_whisper_transcription(test_file)

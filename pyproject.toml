@@ -24,3 +24,9 @@ dependencies = [
 [build-system]
 requires = ["hatchling>=1.20.0"]
 build-backend = "hatchling.build"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+extend-select = ["I"]

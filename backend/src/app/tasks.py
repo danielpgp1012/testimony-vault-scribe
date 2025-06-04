@@ -1,28 +1,29 @@
 import os
 import traceback
-from openai import OpenAI
-from celery import Celery
 
-from .deps import get_supabase
+from celery import Celery
+from openai import OpenAI
+
 from .crud import update_testimony
+from .deps import get_supabase
 
 # --- Celery Configuration ---
 # Create Celery app instance
-celery = Celery('testimony_transcriber')
+celery = Celery("testimony_transcriber")
 
 # Configure broker and backend (Redis)
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
 celery.conf.update(
     broker_url=REDIS_URL,
     result_backend=REDIS_URL,
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='UTC',
+    task_serializer="json",
+    accept_content=["json"],
+    result_serializer="json",
+    timezone="UTC",
     enable_utc=True,
     # Task routing
     task_routes={
-        'transcribe_testimony': {'queue': 'transcription'},
+        "transcribe_testimony": {"queue": "transcription"},
     },
     # Worker configuration
     worker_prefetch_multiplier=1,
@@ -45,6 +46,7 @@ else:
     print("Skipping client initialization (SKIP_CLIENT_INIT=true)")
     openai_client = None
 
+
 def update_db_status(testimony_id, status, transcript=None):
     """Update testimony status and transcript in Supabase"""
     try:
@@ -52,35 +54,37 @@ def update_db_status(testimony_id, status, transcript=None):
         update_data = {"transcript_status": status}
         if transcript:
             update_data["transcript"] = transcript
-        
+
         update_testimony(supabase, testimony_id, update_data)
-        print(f"[DB] Updated testimony {testimony_id}: status='{status}', transcript_length={len(transcript) if transcript else 0}")
+        print(
+            f"[DB] Updated testimony {testimony_id}: status='{status}', transcript_length={len(transcript) if transcript else 0}"
+        )
     except Exception as e:
         print(f"ERROR updating DB for testimony {testimony_id}: {e}")
         traceback.print_exc()
 
 
-@celery.task(bind=True, max_retries=3, default_retry_delay=60, name='transcribe_testimony')
+@celery.task(bind=True, max_retries=3, default_retry_delay=60, name="transcribe_testimony")
 def transcribe_testimony(self, testimony_id: int, file_path: str):
     """
     Transcribe testimony audio using OpenAI Whisper API.
-    
+
     Args:
         testimony_id: The ID of the testimony in the database
         file_path: Path to the audio file on the shared volume
     """
     print(f"\n--- [CELERY TASK] Transcribing testimony {testimony_id} from {file_path} ---")
     print(f"Task ID: {self.request.id}")
-    
+
     # Check if clients are available
     if openai_client is None:
         error_msg = "Required clients not initialized. Cannot process transcription."
         print(f"ERROR: {error_msg}")
         update_db_status(testimony_id, "failed")
         raise RuntimeError(error_msg)
-    
+
     update_db_status(testimony_id, "processing")
-    
+
     # Process the audio file directly
     try:
         # Open the audio file and send to Whisper
@@ -90,11 +94,11 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
                 model="whisper-1",  # Using whisper-1 model for better language support
                 file=audio_file,
                 language="es",  # Primary language is Spanish
-                response_format="text"
+                response_format="text",
             )
-        
+
         transcript = transcription.strip() if transcription else ""
-        
+
         if transcript:
             print("Transcription successful.")
             print(f"Transcript preview: {transcript[:200]}...")
@@ -107,7 +111,7 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
         print(f"--- ERROR processing testimony {testimony_id} ---")
         print(f"Error: {str(e)}")
         traceback.print_exc()
-        
+
         # Retry logic for certain types of errors
         if "rate limit" in str(e).lower() or "timeout" in str(e).lower():
             print(f"Retrying task due to {str(e)}...")
@@ -129,7 +133,6 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
         print(f"--- Finished testimony {testimony_id} ---")
 
 
-
 # --- Local Test ---
 if __name__ == "__main__":
     TEST_FILE = "sample_audio_files/2024.11.24.Testimonio 2.mp3"
@@ -141,4 +144,3 @@ if __name__ == "__main__":
         transcribe_testimony.delay(TEST_ID, TEST_FILE)
     else:
         print("OpenAI client not initialized")
-

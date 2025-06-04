@@ -11,19 +11,19 @@ graph TB
         Upload[File Upload Component]
         Search[Search & Filter]
     end
-    
+
     subgraph "Backend Services"
         API[FastAPI Server<br/>Port 8000]
         Worker[Celery Worker<br/>Transcription Queue]
         Monitor[Flower Monitor<br/>Port 5555]
     end
-    
+
     subgraph "Infrastructure"
         Redis[(Redis<br/>Message Broker<br/>Port 6379)]
         Supabase[(Supabase<br/>Database)]
         OpenAI[OpenAI Whisper API<br/>Transcription]
     end
-    
+
     UI --> API
     Upload --> API
     Search --> API

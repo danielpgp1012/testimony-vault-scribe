@@ -57,7 +57,7 @@ export function Pagination({
       <div className="flex-1 text-sm text-muted-foreground">
         Showing {startItem} to {endItem} of {totalItems} results
       </div>
-      
+
       <div className="flex items-center space-x-2">
         <Button
           variant="outline"
@@ -67,7 +67,7 @@ export function Pagination({
         >
           <ChevronsLeft className="h-4 w-4" />
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -98,7 +98,7 @@ export function Pagination({
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
-        
+
         <Button
           variant="outline"
           size="sm"
@@ -110,4 +110,4 @@ export function Pagination({
       </div>
     </div>
   );
-} 
+}
