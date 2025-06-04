@@ -23,7 +23,3 @@ def get_gcs_client():
             raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS env not set")
         return storage.Client.from_service_account_json(SERVICE_JSON)
 
-if __name__ == "__main__":
-    print(get_supabase())
-    print(get_gcs_client())
-    a=1

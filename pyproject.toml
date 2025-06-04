@@ -2,7 +2,7 @@
 name = "testimony-backend"
 version = "0.1.0"
 description = "FastAPI + Celery backend for transcribing church testimonies"
-authors = [{"name"="Daniel Pacheco"}]
+authors = [{ name = "Daniel Pacheco" }]
 requires-python = ">=3.11"
 
 # Dependencies must be a list of strings per PEP 621

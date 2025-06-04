@@ -11,3 +11,5 @@ python-dotenv==1.0.1
 pydantic==2.10.2
 pydub==0.25.1
 fastapi-pagination==0.12.28
+pytest==7.4.4
+httpx==0.26.0
