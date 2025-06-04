@@ -23,10 +23,10 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
   if (!testimony) return null;
 
   const statusColors = {
-    pending: "bg-yellow-100 text-yellow-800",
-    processing: "bg-blue-100 text-blue-800",
-    completed: "bg-green-100 text-green-800",
-    failed: "bg-red-100 text-red-800"
+    pending: "bg-accent/20 text-accent-foreground border-accent/30",
+    processing: "bg-primary/15 text-primary border-primary/30",
+    completed: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    failed: "bg-red-50 text-red-700 border-red-200"
   };
 
   // Format the recorded date
@@ -102,8 +102,8 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             </div>
           ) : testimony.transcript_status === 'processing' ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-2 text-center">
-              <div className="rounded-full bg-blue-100 p-3">
-                <FileAudio className="h-6 w-6 text-blue-600 animate-pulse-slow" />
+              <div className="rounded-full bg-primary/10 p-3">
+                <FileAudio className="h-6 w-6 text-primary animate-pulse-slow" />
               </div>
               <p className="text-muted-foreground">Transcription in progress...</p>
             </div>
