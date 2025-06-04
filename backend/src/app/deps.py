@@ -9,6 +9,3 @@ SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 @lru_cache
 def get_supabase() -> Client:
     return create_client(SUPABASE_URL, SUPABASE_KEY)
-
-if __name__ == "__main__":
-    print(get_supabase())

@@ -8,9 +8,9 @@ build-backend = "setuptools.build_meta"
 name = "testimony-backend"
 version = "0.1.0"
 description = "FastAPI + Celery backend for transcribing church testimonies"
-# Add your actual name and email
+# Maintainer information
 authors = [
-    {name = "Your Name", email = "you@example.com"},
+    { name = "Daniel Pacheco" },
 ]
 # Consider adding a license, e.g., license = {file = "LICENSE"} or license = {text = "MIT"}
 # license = "MIT"
