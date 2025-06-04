@@ -12,6 +12,7 @@ def check_duplicate_testimony(
     sb: Client,
     audio_hash: Optional[str],
     church_id: Optional[str] = None,
+
 ) -> Optional[int]:
     """Check if a testimony with the same ``audio_hash`` already exists.
 
