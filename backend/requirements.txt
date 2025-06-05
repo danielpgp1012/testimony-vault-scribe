@@ -13,3 +13,7 @@ pytest==7.4.4
 # Pin to a compatible version
 httpx==0.27.2
 openai==1.84.0
+transformers
+nltk
+tqdm
+psycopg2-binary

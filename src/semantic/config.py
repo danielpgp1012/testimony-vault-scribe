@@ -1,0 +1,5 @@
+MODEL_NAME = "text-embedding-3-small"
+EMB_DIM = 768
+MAX_TOKENS = 400
+OVERLAP = 50
+BATCH_SIZE = 96

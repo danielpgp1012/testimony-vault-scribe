@@ -39,3 +39,21 @@ def get_testimony_by_id(sb: Client, testimony_id: int) -> Optional[Dict[str, Any
     """Get a testimony by ID"""
     result = sb.table("testimonies").select("*").eq("id", testimony_id).single().execute()
     return result.data if result.data else None
+
+
+def insert_testimony_chunks(sb: Client, rows: list[Dict[str, Any]]) -> None:
+    """Bulk insert transcript chunks for semantic search."""
+    if not rows:
+        return
+    sb.table("testimony_chunks").insert(rows).execute()
+
+
+def update_testimony_with_indexing(sb: Client, tid: int, fields: Dict[str, Any]) -> None:
+    """Update testimony and index transcript chunks if provided."""
+    update_testimony(sb, tid, fields)
+
+    transcript = fields.get("transcript")
+    if transcript:
+        from semantic.index_testimonies import index_transcript
+
+        index_transcript(sb, tid, transcript)

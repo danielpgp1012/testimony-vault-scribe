@@ -4,13 +4,18 @@ import sys
 import pytest
 
 # Ensure the application package is on the path
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+BACKEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+if BACKEND_DIR not in sys.path:
+    sys.path.insert(0, BACKEND_DIR)
+
+ROOT_SRC = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
+if ROOT_SRC not in sys.path:
+    sys.path.insert(0, ROOT_SRC)
 
 # Default environment variables required by the app during import
 os.environ.setdefault("SUPABASE_URL", "http://test")
 os.environ.setdefault("SUPABASE_KEY", "key")
+os.environ.setdefault("OPENAI_API_KEY", "test")
 
 from app.deps import get_supabase  # noqa: E402
 from app.main import app  # noqa: E402
