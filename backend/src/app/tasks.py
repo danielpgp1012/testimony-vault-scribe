@@ -4,7 +4,7 @@ import traceback
 from celery import Celery
 from openai import OpenAI
 
-from .crud import update_testimony
+from .crud import update_testimony_with_indexing
 from .deps import get_supabase
 
 # --- Celery Configuration ---
@@ -48,14 +48,14 @@ else:
 
 
 def update_db_status(testimony_id, status, transcript=None):
-    """Update testimony status and transcript in Supabase"""
+    """Update testimony status and transcript in Supabase."""
     try:
-        supabase = get_supabase()
+        sb = get_supabase()
         update_data = {"transcript_status": status}
         if transcript:
             update_data["transcript"] = transcript
 
-        update_testimony(supabase, testimony_id, update_data)
+        update_testimony_with_indexing(sb, testimony_id, update_data)
         print(
             f"[DB] Updated testimony {testimony_id}: status='{status}', transcript_length={len(transcript) if transcript else 0}"
         )
@@ -103,6 +103,8 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
             print("Transcription successful.")
             print(f"Transcript preview: {transcript[:200]}...")
             update_db_status(testimony_id, "completed", transcript)
+
+            # Chunks and embeddings handled in update_db_status
         else:
             print("WARNING: Transcription result is empty.")
             update_db_status(testimony_id, "completed_empty")

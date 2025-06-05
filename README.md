@@ -204,6 +204,14 @@ npm run preview
 - **Flower** - Celery monitoring
 - **PostgreSQL** - Database (via Supabase)
 
+## 🧠 Semantic Search
+
+Set `OPENAI_API_KEY`, `SUPABASE_URL` and `SUPABASE_KEY`, then run:
+
+```bash
+python -m semantic.index_testimonies
+```
+
 ## 📊 Monitoring & Debugging
 
 ### Check Service Status
