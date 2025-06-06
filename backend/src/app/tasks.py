@@ -83,24 +83,23 @@ def generate_summary(transcript: str) -> str:
                     "Debes elaborar un **resumen claro y conciso** de un testimonio hablado. Sigue el siguiente "
                     "formato en lo posible\n\n"
                     "◼︎ **Extensión**: 100-150 palabras.\n"
-                    "◼︎ **Estilo**: narración fluida, tercera persona, sin muletillas ni repeticiones.\n"
+                    "◼︎ **Estilo**: narración fluida, tercera persona identificando si es hombre o mujer, sin muletillas ni repeticiones.\n"
                     "◼︎ **Incluye**\n"
-                    "   1. **Promesa o profecía recibida** (\xbfqué dijo el Señor y en qué contexto de la vida de la persona "
+                    "   1. **Promesa o profecía recibida** (qué dijo el Señor y en qué contexto de la vida de la persona "
                     "(si disponible)?).\n"
-                    "   2. **Proceso y manifestación**: cómo actuó Dios para que se cumpliera la promesa (milagro, "
+                    "   2. **Proceso y manifestación**: Cómo se cumplió la promesa y desenlace resultado (milagro, "
                     "cambio personal, puerta abierta, etc.).\n"
-                    "   3. **Resultado**: desenlace concreto de la promesa.\n"
-                    "   4. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
+                    "   3. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
                     "◼︎ **Evita**: nombres completos, direcciones o datos personales sensibles.\n\n"
                     "Al final, añade una lista de etiquetas doctrinales (sin espacios) que capturen las "
                     "virtudes/temas predominantes y el tipo de manifestación.\n"
                     "Formato estricto:\n\n"
                     "**Resumen:**\n"
                     "«Aquí va tu resumen de 100-150 palabras…»\n\n"
-                    "**Virtudes:**\n"
-                    "#promesa_cumplida #profecia #perseverancia #sanidad #familia #fe\n\n"
-                    "Si el testimonio cita un pasaje bíblico, inclúyelo dentro del resumen (ej.: \u201cIsaías 41:10\u201d). "
-                    "No añadas texto fuera de este formato."
+                    "**Palabras clave:**\n"
+                    "<<Aquí van las 2 palabras claves más importantes y específicas del testimonio. Aquí algunos ejemplos: #sanidad #perseverancia #estudios #adicciones #cancer #alabanza #familia #fe, etc\n\n>>"
+                    "Si el testimonio cita un pasaje bíblico, inclúyelo dentro del resumen.\n"
+                    "No añadas texto fuera de este formato ni pongas palabras genéricas en las palabras clave."
                 ),
             },
             {
@@ -110,7 +109,7 @@ def generate_summary(transcript: str) -> str:
         ]
 
         response = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4.1-mini",
             messages=messages,
             max_tokens=250,
             temperature=0.3,
