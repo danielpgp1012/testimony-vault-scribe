@@ -7,8 +7,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const SearchPage = () => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Testimony[]>([]);
   const [selectedTestimony, setSelectedTestimony] = useState<Testimony | null>(null);
@@ -50,9 +52,9 @@ const SearchPage = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold md:text-3xl">Search Testimonies</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t('searchPage.title')}</h1>
         <p className="text-muted-foreground">
-          Search through transcribed testimonies using keywords or phrases
+          {t('searchPage.subtitle')}
         </p>
       </div>
 
@@ -61,7 +63,7 @@ const SearchPage = () => {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search by keywords, church location, or content..."
+            placeholder={t('searchPage.placeholder')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -69,7 +71,7 @@ const SearchPage = () => {
           />
         </div>
         <Button onClick={handleSearch}>
-          Search
+          {t('nav.search')}
         </Button>
       </div>
 
@@ -101,9 +103,9 @@ const SearchPage = () => {
             <div className="rounded-full bg-muted p-6 mb-4">
               <Search className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium">No results found</h3>
+            <h3 className="text-lg font-medium">{t('searchPage.noResults')}</h3>
             <p className="text-muted-foreground mt-1 max-w-md">
-              Try different keywords or check your spelling
+              {t('searchPage.noResultsSubtitle')}
             </p>
           </div>
         )
@@ -112,9 +114,9 @@ const SearchPage = () => {
           <div className="rounded-full bg-muted p-6 mb-4">
             <Search className="h-10 w-10 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-medium">Start searching</h3>
+          <h3 className="text-lg font-medium">{t('searchPage.startSearching')}</h3>
           <p className="text-muted-foreground mt-1 max-w-md">
-            Enter keywords or phrases to search through testimony transcripts
+            {t('searchPage.startSearchingSubtitle')}
           </p>
         </div>
       )}

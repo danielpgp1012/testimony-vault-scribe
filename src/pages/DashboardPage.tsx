@@ -45,7 +45,7 @@ const DashboardPage = () => {
       setPaginatedData(data);
     } catch (error) {
       console.error('Failed to load testimonies:', error);
-      setError('Failed to load testimonies. Please check if the backend server is running.');
+      setError(t('dashboard.connectionError') + '. ' + t('dashboard.retry'));
     } finally {
       setIsLoading(false);
     }
@@ -81,7 +81,7 @@ const DashboardPage = () => {
       });
     } catch (error) {
       console.error('Search error:', error);
-      setError('Search failed. Please check if the backend server is running.');
+      setError(t('dashboard.connectionError') + '. ' + t('dashboard.retry'));
     } finally {
       setIsLoading(false);
     }

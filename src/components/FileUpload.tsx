@@ -212,11 +212,11 @@ export function FileUpload({ onUpload }: FileUploadProps) {
 
       // Show summary toast
       if (successCount > 0 && failureCount === 0) {
-        toast.success(`All ${successCount} testimonies uploaded successfully`);
+        toast.success(t('toast.uploadSuccess'));
       } else if (successCount > 0 && failureCount > 0) {
-        toast.warning(`${successCount} testimonies uploaded successfully, ${failureCount} failed`);
+        toast.warning(`${successCount} ${t('toast.uploadSuccess').toLowerCase()}, ${failureCount} ${t('toast.uploadError').toLowerCase()}`);
       } else {
-        toast.error('All uploads failed');
+        toast.error(t('toast.uploadError'));
       }
 
       // Reset form only if at least one upload succeeded
@@ -227,7 +227,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
       }
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload testimonies');
+      toast.error(t('toast.uploadError'));
     } finally {
       setIsUploading(false);
       setUploadProgress({});

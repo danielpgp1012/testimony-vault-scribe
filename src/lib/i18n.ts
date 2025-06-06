@@ -126,6 +126,37 @@ const resources = {
       'testimonyCard.awaitingTranscription': 'Awaiting transcription',
       'testimonyCard.unknownFile': 'Unknown File',
       'testimonyCard.unknownChurch': 'Unknown Church',
+
+      // 404 Page
+      'notFound.title': 'Page Not Found',
+      'notFound.description': 'The page you are looking for doesn\'t exist or has been moved.',
+      'notFound.returnToDashboard': 'Return to Dashboard',
+
+      // About Page
+      'about.title': 'About Testimony Vault',
+      'about.subtitle': 'Learn how this application helps preserve and search church testimonies',
+      'about.easyUpload': 'Easy Upload',
+      'about.easyUploadDesc': 'Drag and drop MP3 recordings of testimonies along with metadata like church location, date, and tags.',
+      'about.automaticTranscription': 'Automatic Transcription',
+      'about.automaticTranscriptionDesc': 'Recordings are automatically transcribed using advanced speech recognition technology for accurate text.',
+      'about.powerfulSearch': 'Powerful Search',
+      'about.powerfulSearchDesc': 'Search through transcripts using keywords or phrases to easily find specific testimonies.',
+      'about.advancedFiltering': 'Advanced Filtering',
+      'about.advancedFilteringDesc': 'Filter testimonies by church location, date, tags, or transcription status to find exactly what you need.',
+      'about.secureStorage': 'Secure Storage',
+      'about.secureStorageDesc': 'All testimonies are securely stored in both Google Drive and our database for redundancy and easy access.',
+      'about.howItWorks': 'How It Works',
+      'about.step1': 'Upload',
+      'about.step1Desc': 'Drag and drop an MP3 file and fill in the metadata.',
+      'about.step2': 'Storage',
+      'about.step2Desc': 'The file is securely uploaded to both Google Drive and our storage.',
+      'about.step3': 'Processing',
+      'about.step3Desc': 'Our system automatically begins transcribing the audio.',
+      'about.step4': 'Indexing',
+      'about.step4Desc': 'The transcript is indexed for searching and semantic queries.',
+      'about.step5': 'Access',
+      'about.step5Desc': 'Access transcribed testimonies through the dashboard or search function.',
+      'about.footerTagline': 'A tool for preserving and sharing church testimonies',
     }
   },
   es: {
@@ -250,6 +281,37 @@ const resources = {
       'testimonyCard.awaitingTranscription': 'Esperando transcripción',
       'testimonyCard.unknownFile': 'Archivo Desconocido',
       'testimonyCard.unknownChurch': 'Iglesia Desconocida',
+
+      // 404 Page
+      'notFound.title': 'Página No Encontrada',
+      'notFound.description': 'La página que buscas no existe o ha sido movida.',
+      'notFound.returnToDashboard': 'Volver al Panel de Control',
+
+      // About Page
+      'about.title': 'Acerca de Testimony Vault',
+      'about.subtitle': 'Aprende cómo esta aplicación ayuda a preservar y buscar testimonios de iglesia',
+      'about.easyUpload': 'Subida Fácil',
+      'about.easyUploadDesc': 'Arrastra y suelta grabaciones MP3 de testimonios junto con metadatos como ubicación de iglesia, fecha y etiquetas.',
+      'about.automaticTranscription': 'Transcripción Automática',
+      'about.automaticTranscriptionDesc': 'Las grabaciones se transcriben automáticamente usando tecnología avanzada de reconocimiento de voz para texto preciso.',
+      'about.powerfulSearch': 'Búsqueda Poderosa',
+      'about.powerfulSearchDesc': 'Busca a través de transcripciones usando palabras clave o frases para encontrar fácilmente testimonios específicos.',
+      'about.advancedFiltering': 'Filtrado Avanzado',
+      'about.advancedFilteringDesc': 'Filtra testimonios por ubicación de iglesia, fecha, etiquetas o estado de transcripción para encontrar exactamente lo que necesitas.',
+      'about.secureStorage': 'Almacenamiento Seguro',
+      'about.secureStorageDesc': 'Todos los testimonios se almacenan de forma segura tanto en Google Drive como en nuestra base de datos para redundancia y fácil acceso.',
+      'about.howItWorks': 'Cómo Funciona',
+      'about.step1': 'Subir',
+      'about.step1Desc': 'Arrastra y suelta un archivo MP3 y completa los metadatos.',
+      'about.step2': 'Almacenamiento',
+      'about.step2Desc': 'El archivo se sube de forma segura tanto a Google Drive como a nuestro almacenamiento.',
+      'about.step3': 'Procesamiento',
+      'about.step3Desc': 'Nuestro sistema comienza automáticamente a transcribir el audio.',
+      'about.step4': 'Indexación',
+      'about.step4Desc': 'La transcripción se indexa para búsquedas y consultas semánticas.',
+      'about.step5': 'Acceso',
+      'about.step5Desc': 'Accede a testimonios transcritos a través del panel de control o función de búsqueda.',
+      'about.footerTagline': 'Una herramienta para preservar y compartir testimonios de iglesia',
     }
   }
 };
