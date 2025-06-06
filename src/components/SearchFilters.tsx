@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Filter, X } from 'lucide-react';
 import { ChurchLocation } from '@/types/testimony';
+import { useTranslation } from 'react-i18next';
 
 interface SearchFiltersProps {
   onSearch: (query: string) => void;
@@ -24,6 +25,7 @@ export interface FilterOptions {
 }
 
 export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<FilterOptions>({
     status: 'all',
@@ -89,7 +91,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="text"
-            placeholder="Search testimonies..."
+            placeholder={t('search.placeholder')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -97,7 +99,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
           />
         </div>
         <Button onClick={handleSearch}>
-          Search
+          {t('nav.search')}
         </Button>
         <Button
           variant="outline"
@@ -105,55 +107,55 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
           className="flex items-center gap-1"
         >
           <Filter className="h-4 w-4" />
-          <span className="hidden sm:inline">Filters</span>
+          <span className="hidden sm:inline">{t('filters.title')}</span>
         </Button>
       </div>
 
       {showFilters && (
         <div className="p-4 border rounded-md space-y-4 bg-background">
           <div className="flex justify-between items-center">
-            <h3 className="font-medium">Filters</h3>
+            <h3 className="font-medium">{t('filters.title')}</h3>
             <Button
               variant="ghost"
               size="sm"
               onClick={resetFilters}
               className="h-8 text-sm"
             >
-              Reset
+              {t('filters.reset')}
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
+              <label className="text-sm font-medium">{t('filters.status')}</label>
               <Select
                 value={filters.status}
                 onValueChange={(value) => handleFilterChange('status', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder={t('filters.selectStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="processing">Processing</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
+                  <SelectItem value="all">{t('filters.allStatuses')}</SelectItem>
+                  <SelectItem value="pending">{t('filters.pending')}</SelectItem>
+                  <SelectItem value="processing">{t('filters.processing')}</SelectItem>
+                  <SelectItem value="completed">{t('filters.completed')}</SelectItem>
+                  <SelectItem value="failed">{t('filters.failed')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Church Location</label>
+              <label className="text-sm font-medium">{t('filters.church')}</label>
               <Select
                 value={filters.church_id}
                 onValueChange={(value) => handleFilterChange('church_id', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select church location" />
+                  <SelectValue placeholder={t('filters.selectChurchLocation')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Locations</SelectItem>
+                  <SelectItem value="all">{t('filters.allLocations')}</SelectItem>
                   {Object.values(ChurchLocation).map((location) => (
                     <SelectItem key={location} value={location}>
                       {location}
@@ -165,10 +167,10 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Tags</label>
+            <label className="text-sm font-medium">{t('filters.tags')}</label>
             <div className="flex">
               <Input
-                placeholder="Add tag and press Enter"
+                placeholder={t('filters.addTag')}
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
@@ -180,7 +182,7 @@ export function SearchFilters({ onSearch, onFilterChange }: SearchFiltersProps) 
                 onClick={addTag}
                 className="ml-2"
               >
-                Add
+                {t('fileUpload.addTag')}
               </Button>
             </div>
 

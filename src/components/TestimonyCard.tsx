@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Calendar, User, FileAudio, Search, File, Clock, MapPin } from 'lucide-react';
 import { Testimony } from '@/types/testimony';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 interface TestimonyCardProps {
   testimony: Testimony;
@@ -12,6 +13,7 @@ interface TestimonyCardProps {
 }
 
 export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) {
+  const { t } = useTranslation();
   const statusColors = {
     pending: "bg-accent/20 text-accent-foreground border-accent/30",
     processing: "bg-primary/15 text-primary border-primary/30",
@@ -38,7 +40,7 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <CardTitle className="text-lg font-semibold line-clamp-1">
-            {testimony.user_file_name || 'Unknown File'}
+            {testimony.user_file_name || t('testimonyCard.unknownFile')}
           </CardTitle>
           <Badge className={statusColors[testimony.transcript_status]}>
             {testimony.transcript_status.charAt(0).toUpperCase() + testimony.transcript_status.slice(1)}
@@ -50,13 +52,13 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
           {/* Church location */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-4 w-4" />
-            <span>{testimony.church_id || 'Unknown Church'}</span>
+            <span>{testimony.church_id || t('testimonyCard.unknownChurch')}</span>
           </div>
 
           {/* Recorded date */}
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Clock className="h-4 w-4" />
-            <span>Recorded: {recordedDate}</span>
+            <span>{t('testimonyCard.recorded')}: {recordedDate}</span>
           </div>
 
           {/* Tags */}

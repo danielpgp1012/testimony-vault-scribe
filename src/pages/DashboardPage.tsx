@@ -7,8 +7,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Testimony, PaginatedResponse } from '@/types/testimony';
 import { fetchTestimonies, searchTestimonies, filterTestimonies, searchTestimoniesWithFilters } from '@/services/testimonyService';
 import { FileAudio } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 const DashboardPage = () => {
+  const { t } = useTranslation();
   const [paginatedData, setPaginatedData] = useState<PaginatedResponse<Testimony> | null>(null);
   const [selectedTestimony, setSelectedTestimony] = useState<Testimony | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -108,9 +110,9 @@ const DashboardPage = () => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold md:text-3xl">Testimony Dashboard</h1>
+        <h1 className="text-2xl font-bold md:text-3xl">{t('dashboard.title')}</h1>
         <p className="text-muted-foreground">
-          Manage and explore church testimonies
+          {t('dashboard.subtitle')}
         </p>
       </div>
 
@@ -137,7 +139,7 @@ const DashboardPage = () => {
             <div className="rounded-full bg-red-50 p-6 mb-4 border border-red-200">
               <FileAudio className="h-10 w-10 text-red-600" />
             </div>
-            <h3 className="text-lg font-medium text-red-700">Connection Error</h3>
+            <h3 className="text-lg font-medium text-red-700">{t('dashboard.connectionError')}</h3>
             <p className="text-red-600 mt-1 max-w-md">
               {error}
             </p>
@@ -145,7 +147,7 @@ const DashboardPage = () => {
               onClick={loadTestimonies}
               className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
             >
-              Retry
+              {t('dashboard.retry')}
             </button>
           </div>
         ) : paginatedData && paginatedData.items.length > 0 ? (
@@ -174,13 +176,13 @@ const DashboardPage = () => {
             <div className="rounded-full bg-muted p-6 mb-4">
               <FileAudio className="h-10 w-10 text-muted-foreground" />
             </div>
-            <h3 className="text-lg font-medium">No testimonies found</h3>
+            <h3 className="text-lg font-medium">{t('dashboard.noTestimonies')}</h3>
             <p className="text-muted-foreground mt-1 max-w-md">
               {searchQuery || Object.values(filters).some(val =>
                 val !== 'all' && !(Array.isArray(val) && val.length === 0)
               )
-                ? "Try adjusting your search or filters to find what you're looking for."
-                : "Start by uploading your first testimony."}
+                ? t('dashboard.adjustFilters')
+                : t('dashboard.noTestimoniesSubtitle')}
             </p>
           </div>
         )}

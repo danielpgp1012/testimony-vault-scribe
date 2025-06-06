@@ -13,6 +13,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { toast } from 'sonner';
 import { TestimonyFormData, ChurchLocation } from '@/types/testimony';
+import { useTranslation } from 'react-i18next';
 
 interface FileUploadProps {
   onUpload: (data: TestimonyFormData) => Promise<void>;
@@ -25,19 +26,21 @@ interface FileWithDate {
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB in bytes
 
-const formSchema = z.object({
-  church_id: z.nativeEnum(ChurchLocation, { message: "Please select a church location" }),
-  audioFiles: z.array(z.instanceof(File))
-    .min(1, "At least one audio file is required")
-    .refine((files) => files.every(file => file.size <= MAX_FILE_SIZE), "All files must be less than 10 MB"),
-  tags: z.array(z.string()).default([])
-});
-
 export function FileUpload({ onUpload }: FileUploadProps) {
+  const { t } = useTranslation();
   const [tagInput, setTagInput] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{[key: string]: boolean}>({});
   const [fileDates, setFileDates] = useState<{[key: string]: string}>({});
+
+  // Create form schema with translated messages
+  const formSchema = z.object({
+    church_id: z.nativeEnum(ChurchLocation, { message: t('form.selectChurch') }),
+    audioFiles: z.array(z.instanceof(File))
+      .min(1, t('form.minOneFile'))
+      .refine((files) => files.every(file => file.size <= MAX_FILE_SIZE), t('form.fileSizeLimit')),
+    tags: z.array(z.string()).default([])
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,11 +55,11 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0];
       if (rejection.errors.some((error: any) => error.code === 'file-too-large')) {
-        toast.error('File size must be less than 10 MB');
+        toast.error(t('toast.fileTooLarge'));
         return;
       }
       if (rejection.errors.some((error: any) => error.code === 'file-invalid-type')) {
-        toast.error('Please upload MP3 files only');
+        toast.error(t('toast.invalidFileType'));
         return;
       }
     }
@@ -169,12 +172,12 @@ export function FileUpload({ onUpload }: FileUploadProps) {
     const values = form.getValues();
 
     if (!values.audioFiles || values.audioFiles.length === 0) {
-      toast.error('Please select at least one audio file');
+      toast.error(t('toast.selectFiles'));
       return;
     }
 
     if (!values.church_id) {
-      toast.error('Please select a church location');
+      toast.error(t('toast.selectChurchLocation'));
       return;
     }
 
@@ -249,15 +252,15 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               <UploadCloud className="h-12 w-12 text-primary mb-2 mx-auto" />
               {audioFiles && audioFiles.length > 0 ? (
                 <div className="text-center">
-                  <p className="font-medium">{audioFiles.length} file{audioFiles.length > 1 ? 's' : ''} selected</p>
+                  <p className="font-medium">{audioFiles.length} {t('files.selected')}</p>
                   <p className="text-sm text-muted-foreground">
-                    Total size: {(audioFiles.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024)).toFixed(2)} MB
+                    {t('files.totalSize')}: {(audioFiles.reduce((sum, file) => sum + file.size, 0) / (1024 * 1024)).toFixed(2)} MB
                   </p>
                 </div>
               ) : (
                 <div className="text-center">
-                  <p className="font-medium">Drag &amp; drop your MP3 files here</p>
-                  <p className="text-sm text-muted-foreground">or click to browse (max 10 MB per file)</p>
+                  <p className="font-medium">{t('fileUpload.dropzone')}</p>
+                  <p className="text-sm text-muted-foreground">({t('upload.instruction2')})</p>
                 </div>
               )}
             </div>
@@ -265,7 +268,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
             {/* File List */}
             {audioFiles && audioFiles.length > 0 && (
               <div className="space-y-2">
-                <FormLabel>Selected Files</FormLabel>
+                <FormLabel>Archivos Seleccionados</FormLabel>
                 <div className="max-h-60 overflow-y-auto space-y-3">
                   {audioFiles.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="flex items-center justify-between p-4 bg-muted rounded-lg">
@@ -276,7 +279,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                           <p className="text-xs text-muted-foreground">
                             {(file.size / (1024 * 1024)).toFixed(2)} MB
                             {uploadProgress[file.name] && (
-                              <span className="ml-2 text-primary">Uploading...</span>
+                              <span className="ml-2 text-primary">{t('fileUpload.uploading')}</span>
                             )}
                           </p>
                         </div>
@@ -291,7 +294,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                           onChange={(e) => updateFileDate(file, e.target.value)}
                           className="w-36 text-xs"
                           disabled={isUploading}
-                          placeholder="Recorded date"
+                          placeholder={t('fileUpload.recordedDate')}
                         />
                         <Button
                           type="button"
@@ -308,7 +311,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  💡 Tip: Dates are auto-detected from file modification time. You can manually override any date, and setting a date for one file will apply it to all files without dates
+                  {t('files.tip')}
                 </p>
               </div>
             )}
@@ -318,11 +321,11 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               name="church_id"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Church Location</FormLabel>
+                  <FormLabel>{t('fileUpload.churchLocation')}</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a church location" />
+                        <SelectValue placeholder={t('fileUpload.selectChurch')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -339,13 +342,13 @@ export function FileUpload({ onUpload }: FileUploadProps) {
             />
 
             <FormItem>
-              <FormLabel>Tags</FormLabel>
+              <FormLabel>{t('fileUpload.tags')}</FormLabel>
               <div className="flex">
                 <Input
                   value={tagInput}
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Add tags (press Enter)"
+                  placeholder={t('fileUpload.tagsPlaceholder')}
                   className="flex-1"
                 />
                 <Button
@@ -354,7 +357,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
                   variant="secondary"
                   className="ml-2"
                 >
-                  Add
+                  {t('fileUpload.addTag')}
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2 mt-2">
@@ -375,7 +378,7 @@ export function FileUpload({ onUpload }: FileUploadProps) {
               className="w-full"
               disabled={isUploading || !audioFiles || audioFiles.length === 0}
             >
-              {isUploading ? `Uploading ${audioFiles?.length || 0} file${audioFiles?.length !== 1 ? 's' : ''}...` : `Upload ${audioFiles?.length || 0} Testimon${audioFiles?.length !== 1 ? 'ies' : 'y'}`}
+              {isUploading ? t('fileUpload.uploading') : t('fileUpload.uploadFiles')}
             </Button>
           </form>
         </Form>
