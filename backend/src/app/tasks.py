@@ -47,21 +47,79 @@ else:
     openai_client = None
 
 
-def update_db_status(testimony_id, status, transcript=None):
-    """Update testimony status and transcript in Supabase"""
+def update_db_status(testimony_id, status, transcript=None, summary=None):
+    """Update testimony status, transcript, and summary in Supabase"""
     try:
         supabase = get_supabase()
         update_data = {"transcript_status": status}
         if transcript:
             update_data["transcript"] = transcript
+        if summary:
+            update_data["summary"] = summary
 
         update_testimony(supabase, testimony_id, update_data)
         print(
-            f"[DB] Updated testimony {testimony_id}: status='{status}', transcript_length={len(transcript) if transcript else 0}"
+            f"[DB] Updated testimony {testimony_id}: status='{status}', transcript_length={len(transcript) if transcript else 0}, summary_length={len(summary) if summary else 0}"
         )
     except Exception as e:
         print(f"ERROR updating DB for testimony {testimony_id}: {e}")
         traceback.print_exc()
+
+
+def generate_summary(transcript: str) -> str:
+    """Generate a concise summary of the testimony transcript."""
+    if not transcript or openai_client is None:
+        return ""
+
+    try:
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "Eres un asistente lingüístico experto de la iglesia de Dios Ministerial de Jesucristo "
+                    "Internacional, que es una iglesia neo-pentecostal con énfasis en la obra del Espíritu Santo y "
+                    "el don de profecía, donde Dios habla a las personas y les hace promesas que las consuelan, "
+                    "exhortan y edifican.\n"
+                    "Debes elaborar un **resumen claro y conciso** de un testimonio hablado. Sigue el siguiente "
+                    "formato en lo posible\n\n"
+                    "◼︎ **Extensión**: 100-150 palabras.\n"
+                    "◼︎ **Estilo**: narración fluida, tercera persona, sin muletillas ni repeticiones.\n"
+                    "◼︎ **Incluye**\n"
+                    "   1. **Promesa o profecía recibida** (\xbfqué dijo el Señor y en qué contexto de la vida de la persona "
+                    "(si disponible)?).\n"
+                    "   2. **Proceso y manifestación**: cómo actuó Dios para que se cumpliera la promesa (milagro, "
+                    "cambio personal, puerta abierta, etc.).\n"
+                    "   3. **Resultado**: desenlace concreto de la promesa.\n"
+                    "   4. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
+                    "◼︎ **Evita**: nombres completos, direcciones o datos personales sensibles.\n\n"
+                    "Al final, añade una lista de etiquetas doctrinales (sin espacios) que capturen las "
+                    "virtudes/temas predominantes y el tipo de manifestación.\n"
+                    "Formato estricto:\n\n"
+                    "**Resumen:**\n"
+                    "«Aquí va tu resumen de 100-150 palabras…»\n\n"
+                    "**Virtudes:**\n"
+                    "#promesa_cumplida #profecia #perseverancia #sanidad #familia #fe\n\n"
+                    "Si el testimonio cita un pasaje bíblico, inclúyelo dentro del resumen (ej.: \u201cIsaías 41:10\u201d). "
+                    "No añadas texto fuera de este formato."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Transcripción del testimonio:\n{transcript}",
+            },
+        ]
+
+        response = openai_client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=250,
+            temperature=0.3,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"ERROR generating summary: {e}")
+        traceback.print_exc()
+        return ""
 
 
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, name="transcribe_testimony")
@@ -102,7 +160,10 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
         if transcript:
             print("Transcription successful.")
             print(f"Transcript preview: {transcript[:200]}...")
-            update_db_status(testimony_id, "completed", transcript)
+            summary = generate_summary(transcript)
+            if summary:
+                print(f"Summary generated: {summary[:200]}...")
+            update_db_status(testimony_id, "completed", transcript, summary)
         else:
             print("WARNING: Transcription result is empty.")
             update_db_status(testimony_id, "completed_empty")
