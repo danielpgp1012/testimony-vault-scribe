@@ -186,7 +186,7 @@ def search_testimonies(
     tags: Optional[List[str]] = Query(None),
     supabase=Depends(get_supabase),
 ):
-    """Search testimonies using %like% functionality on transcript, tags, and church_id"""
+    """Search testimonies using %like% functionality on transcript, summary, tags, and church_id"""
     if not query or len(query.strip()) == 0:
         raise HTTPException(status_code=400, detail="Search query cannot be empty")
 
@@ -200,9 +200,12 @@ def search_testimonies(
     if transcript_status:
         base_query = base_query.eq("transcript_status", transcript_status)
 
-    # Search in transcript and church_id using ilike (case-insensitive LIKE)
+    # Search in transcript, summary, and church_id using ilike (case-insensitive LIKE)
     search_query = f"%{query.lower()}%"
     transcript_results = base_query.ilike("transcript", search_query).order("recorded_at", desc=True).execute().data
+
+    # Search in summary
+    summary_results = base_query.ilike("summary", search_query).order("recorded_at", desc=True).execute().data
 
     # Search in church_id
     church_results = base_query.ilike("church_id", search_query).order("recorded_at", desc=True).execute().data
@@ -221,7 +224,7 @@ def search_testimonies(
                     break
 
     # Combine all results and remove duplicates
-    all_results = transcript_results + church_results + tag_results
+    all_results = transcript_results + summary_results + church_results + tag_results
     unique_results = []
     seen_ids = set()
 

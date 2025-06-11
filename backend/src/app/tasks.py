@@ -90,16 +90,15 @@ def generate_summary(transcript: str) -> str:
                     "   2. **Proceso y manifestación**: Cómo se cumplió la promesa y desenlace resultado (milagro, "
                     "cambio personal, puerta abierta, etc.).\n"
                     "   3. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
-                    "◼︎ **Evita**: nombres completos, direcciones o datos personales sensibles.\n\n"
                     "Al final, añade una lista de etiquetas doctrinales (sin espacios) que capturen las "
                     "virtudes/temas predominantes y el tipo de manifestación.\n"
                     "Formato estricto:\n\n"
                     "**Resumen:**\n"
                     "«Aquí va tu resumen de 100-150 palabras…»\n\n"
-                    "**Palabras clave:**\n"
-                    "<<Aquí van las 2 palabras claves más importantes y específicas del testimonio. Aquí algunos ejemplos: #sanidad #perseverancia #estudios #adicciones #cancer #alabanza #familia #fe, etc\n\n>>"
+                    "**Etiquetas doctrinales:**\n"
+                    "<<Aquí van las 5 palabras claves más importantes, específicas y características del testimonio (tanto describiendo la prueba como la virtud que se manifiesta). Aquí algunos ejemplos: #sanidad #perseverancia #estudios #adicciones #cancer #alabanza #familia #fe,etc. Evita palabras obvias como #profecía, #promesa etc.\n\n>>"
                     "Si el testimonio cita un pasaje bíblico, inclúyelo dentro del resumen.\n"
-                    "No añadas texto fuera de este formato ni pongas palabras genéricas en las palabras clave."
+                    "No añadas texto fuera de este formato."
                 ),
             },
             {
