@@ -1,4 +1,5 @@
 import os
+import json
 import traceback
 
 from celery import Celery
@@ -131,6 +132,127 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
             except Exception as e:
                 print(f"Warning: Could not delete audio file {file_path}: {e}")
         print(f"--- Finished testimony {testimony_id} ---")
+
+
+def tag_testimony(transcription: str):
+    """
+    Tag testimony transcription using OpenAI API.
+    Args:
+        transcription: Text transcription of testimony
+    """
+
+    def get_metacategories_tags(d):
+        return list(d.keys())
+
+    def get_categories_tags(d):
+        tags = set()
+        for v in d.values():
+            if isinstance(v, dict):
+                tags.update(v.keys())
+        return list(tags)
+
+    def get_all_tag_names(d):
+        tags = set()
+        for k, v in d.items():
+            tags.add(k)
+            if isinstance(v, dict):
+                tags.update(get_all_tag_names(v))
+        return list(tags)
+
+    def get_inner_tag_names(d):
+        tags = set()
+        for k, v in d.items():
+            if isinstance(v, dict):
+                tags.update(get_inner_tag_names(v))
+            elif v:  # If it's a leaf and True
+                tags.add(k)
+        return list(tags)
+
+    system_prompt = """You are a multilabel classifier.
+Given a piece of text and the taxonomy below, assign all relevant labels from the taxonomy.
+Return the labels as a nested JSON dictionary, where each label is marked `true` at the deepest relevant level.
+Use only the labels provided in the taxonomy. Do not invent or combine labels. If no label applies, return an empty dictionary.
+Preserve the full taxonomy path and hierarchy in the output.
+
+Material
+-> Salud
+---> Enfermedad
+---> Accidente
+---> Bienestar Mental
+-> Economía
+---> Casa
+---> Carro
+---> Deudas
+---> Ingresos
+---> Ahorros
+---> Gastos
+-> Familia
+---> Pareja
+---> Hijos
+---> Padres
+---> Hermanos
+---> Familia Cercana
+-> Amistades
+---> Amigos Cercanos
+---> Conocidos
+---> Sociedad
+-> Profesional
+---> Estudios
+---> Trabajo
+---> Emprendimiento
+---> Jubilación
+
+Espiritual
+-> Desarrollo Personal
+---> Identificar Tendencias
+---> Vencer Tendencias
+-> Vida Espiritual
+---> Oración
+---> Obediencia
+---> Frutos
+---> Leer biblia
+---> Leer libro vivencias
+---> Cantar a capela
+---> Valor Hermana Maria Luisa
+---> Congregación
+---> Diezmo
+---> Labores Espirituales
+
+An user input example:
+Estoy agradecido por el apoyo de mis padres, hermanos y amigos cercanos durante mi enfermedad y por poder ahorrar algo de dinero este mes.
+
+An expected assistant output:
+{
+  "Material": {
+    "Salud": {
+      "Enfermedad": true
+    },
+    "Economía": {
+      "Ahorros": true
+    },
+    "Familia": {
+      "Padres": true,
+      "Hermanos": true
+    },
+    "Amistades": {
+      "Amigos Cercanos": true
+    }
+  }
+}
+"""
+
+    response = openai_client.responses.create(
+        model="gpt-4.1",
+        instructions=system_prompt,
+        input=transcription,
+    )
+
+    tags_structured = json.loads(response.output_text)
+    metacategories = get_metacategories_tags(tags_structured)
+    categories = get_categories_tags(tags_structured)
+    tags_all = get_all_tag_names(tags_structured)
+    tags = get_inner_tag_names(tags_structured)
+    return tags, categories, metacategories, tags_structured, tags_all
 
 
 # --- Local Test ---
