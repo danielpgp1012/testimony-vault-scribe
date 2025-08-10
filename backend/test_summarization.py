@@ -105,6 +105,15 @@ def test_summarization():
 
 def test_custom_transcript():
     """Allow testing with a custom transcript input."""
+    # Skip in non-interactive environments (e.g., when running under pytest CI)
+    try:
+        is_tty = hasattr(sys.stdin, "isatty") and sys.stdin.isatty()
+    except Exception:
+        is_tty = False
+    if os.getenv("PYTEST_CURRENT_TEST") is not None or not is_tty:
+        # Avoid reading from stdin during automated test runs
+        return
+
     print("🔧 CUSTOM TRANSCRIPT TEST")
     print("-" * 30)
     print("Choose input method:")
@@ -143,8 +152,6 @@ def test_custom_transcript():
         custom_transcript = "\n".join(lines)
 
     elif choice == "2":
-        import os
-
         # Get the current working directory and script directory
         current_dir = os.getcwd()
         script_dir = os.path.dirname(os.path.abspath(__file__))

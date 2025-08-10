@@ -52,3 +52,8 @@ dependencies = [
 #   "pytest>=7.0.0",
 #   "httpx>=0.25.0", # For testing FastAPI endpoints
 # ]
+
+[tool.pytest.ini_options]
+# Restrict test discovery to the dedicated tests directory.
+testpaths = ["tests"]
+python_files = ["test_*.py"]
