@@ -4,7 +4,7 @@ import traceback
 from celery import Celery
 from openai import OpenAI
 
-from .crud import update_testimony
+from .crud import get_or_create_summary_prompt, update_testimony
 from .deps import get_supabase
 
 # --- Celery Configuration ---
@@ -47,7 +47,7 @@ else:
     openai_client = None
 
 
-def update_db_status(testimony_id, status, transcript=None, summary=None):
+def update_db_status(testimony_id, status, transcript=None, summary=None, summary_prompt_id=None):
     """Update testimony status, transcript, and summary in Supabase"""
     try:
         supabase = get_supabase()
@@ -56,6 +56,8 @@ def update_db_status(testimony_id, status, transcript=None, summary=None):
             update_data["transcript"] = transcript
         if summary:
             update_data["summary"] = summary
+        if summary_prompt_id is not None:
+            update_data["summary_prompt_id"] = summary_prompt_id
 
         update_testimony(supabase, testimony_id, update_data)
         print(
@@ -64,6 +66,44 @@ def update_db_status(testimony_id, status, transcript=None, summary=None):
     except Exception as e:
         print(f"ERROR updating DB for testimony {testimony_id}: {e}")
         traceback.print_exc()
+
+
+# --- Summary Prompt Configuration ---
+SUMMARY_MODEL = os.environ.get("SUMMARY_MODEL", "gpt-4.1-mini")
+SUMMARY_TEMPERATURE = float(os.environ.get("SUMMARY_TEMPERATURE", "0.3"))
+SUMMARY_MAX_TOKENS = int(os.environ.get("SUMMARY_MAX_TOKENS", "250"))
+
+# Fixed semantic version for the prompt configuration (date belongs in created_at)
+SUMMARY_PROMPT_VERSION = os.environ.get("SUMMARY_PROMPT_VERSION", "v2")
+
+CURRENT_SUMMARY_PROMPT = (
+    "Eres un asistente lingüístico experto de la iglesia de Dios Ministerial de Jesucristo "
+    "Internacional, que es una iglesia neo-pentecostal con énfasis en la obra del Espíritu Santo y "
+    "el don de profecía, donde Dios habla a las personas y les hace promesas que las consuelan, "
+    "exhortan y edifican.\n"
+    "Debes elaborar un **resumen claro y conciso** de un testimonio hablado. Sigue el siguiente "
+    "formato en lo posible\n\n"
+    "◼︎ **Extensión**: 100-150 palabras.\n"
+    "◼︎ **Estilo**: narración fluida, tercera persona, identificando el genero solo cuando sea evidente, sin muletillas ni repeticiones.\n"
+    "◼︎ **Incluye**\n"
+    "   1. **Promesa o profecía recibida** (qué dijo el Señor y en qué contexto de la vida de la persona "
+    "(si disponible)?).\n"
+    "   2. **Proceso y manifestación**: Cómo se cumplió la promesa y desenlace resultado (milagro, "
+    "cambio personal, puerta abierta, etc.).\n"
+    "   3. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
+    "Al final, añade 3-7 etiquetas doctrinales (en minúsculas, sin espacios ni acentos) que capturen el "
+    "contenido del testimonio para búsqueda semántica y etiquetado doctrinal.\n"
+    "Las etiquetas deben:\n"
+    "- Estar en minúsculas, sin acentos ni espacios (usa guion_bajo)\n"
+    "- Describir tanto la prueba como la virtud manifestada\n"
+    "- Ser específicas y características de este testimonio\n"
+    "- Evitar términos genéricos como #profecia o #promesa\n\n"
+    "Ejemplos: #sanidad #perseverancia #estudios #adicciones #cancer #alabanza #familia #fe\n\n"
+    "Formato estricto:\n\n"
+    "«Aquí va tu resumen de 100-150 palabras…»\n\n"
+    "«Aquí van las etiquetas doctrinales…»\n\n"
+    "No añadas texto fuera de este formato."
+)
 
 
 def generate_summary(transcript: str) -> str:
@@ -75,34 +115,7 @@ def generate_summary(transcript: str) -> str:
         messages = [
             {
                 "role": "system",
-                "content": (
-                    "Eres un asistente lingüístico experto de la iglesia de Dios Ministerial de Jesucristo "
-                    "Internacional, que es una iglesia neo-pentecostal con énfasis en la obra del Espíritu Santo y "
-                    "el don de profecía, donde Dios habla a las personas y les hace promesas que las consuelan, "
-                    "exhortan y edifican.\n"
-                    "Debes elaborar un **resumen claro y conciso** de un testimonio hablado. Sigue el siguiente "
-                    "formato en lo posible\n\n"
-                    "◼︎ **Extensión**: 100-150 palabras.\n"
-                    "◼︎ **Estilo**: narración fluida, tercera persona, identificando el genero solo cuando sea evidente, sin muletillas ni repeticiones.\n"
-                    "◼︎ **Incluye**\n"
-                    "   1. **Promesa o profecía recibida** (qué dijo el Señor y en qué contexto de la vida de la persona "
-                    "(si disponible)?).\n"
-                    "   2. **Proceso y manifestación**: Cómo se cumplió la promesa y desenlace resultado (milagro, "
-                    "cambio personal, puerta abierta, etc.).\n"
-                    "   3. **Lección edificante para la iglesia**: enseñanza principal que el hermano(a) quiere transmitir.\n\n"
-                    "Al final, añade 3-7 etiquetas doctrinales (en minúsculas, sin espacios ni acentos) que capturen el "
-                    "contenido del testimonio para búsqueda semántica y etiquetado doctrinal.\n"
-                    "Las etiquetas deben:\n"
-                    "- Estar en minúsculas, sin acentos ni espacios (usa guion_bajo)\n"
-                    "- Describir tanto la prueba como la virtud manifestada\n"
-                    "- Ser específicas y características de este testimonio\n"
-                    "- Evitar términos genéricos como #profecia o #promesa\n\n"
-                    "Ejemplos: #sanidad #perseverancia #estudios #adicciones #cancer #alabanza #familia #fe\n\n"
-                    "Formato estricto:\n\n"
-                    "«Aquí va tu resumen de 100-150 palabras…»\n\n"
-                    "«Aquí van las etiquetas doctrinales…»\n\n"
-                    "No añadas texto fuera de este formato."
-                ),
+                "content": CURRENT_SUMMARY_PROMPT,
             },
             {
                 "role": "user",
@@ -111,10 +124,10 @@ def generate_summary(transcript: str) -> str:
         ]
 
         response = openai_client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model=SUMMARY_MODEL,
             messages=messages,
-            max_tokens=250,
-            temperature=0.3,
+            max_tokens=SUMMARY_MAX_TOKENS,
+            temperature=SUMMARY_TEMPERATURE,
         )
         return response.choices[0].message.content.strip()
     except Exception as e:
@@ -161,10 +174,26 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
         if transcript:
             print("Transcription successful.")
             print(f"Transcript preview: {transcript[:200]}...")
+            # Track summary prompt used for this generation
+            try:
+                supabase = get_supabase()
+                prompt_id = get_or_create_summary_prompt(
+                    supabase,
+                    name="summary",
+                    version=SUMMARY_PROMPT_VERSION,
+                    prompt_template=CURRENT_SUMMARY_PROMPT,
+                    model_name=SUMMARY_MODEL,
+                    temperature=SUMMARY_TEMPERATURE,
+                    max_tokens=SUMMARY_MAX_TOKENS,
+                )
+            except Exception as e:
+                print(f"ERROR creating/fetching summary prompt: {e}")
+                prompt_id = None
+
             summary = generate_summary(transcript)
             if summary:
                 print(f"Summary generated: {summary[:200]}...")
-            update_db_status(testimony_id, "completed", transcript, summary)
+            update_db_status(testimony_id, "completed", transcript, summary, summary_prompt_id=prompt_id)
         else:
             print("WARNING: Transcription result is empty.")
             update_db_status(testimony_id, "completed_empty")

@@ -109,8 +109,13 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
 
               <TabsContent value="summary" className="mt-4">
                 {testimony.summary ? (
-                  <div className="whitespace-pre-wrap text-sm">
-                    {testimony.summary}
+                  <div className="whitespace-pre-wrap text-sm space-y-2">
+                    <div>{testimony.summary}</div>
+                    {typeof testimony.summary_prompt_id !== 'undefined' && (
+                      <div className="text-xs text-muted-foreground">
+                        Prompt ID: {testimony.summary_prompt_id}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="text-sm text-muted-foreground">
