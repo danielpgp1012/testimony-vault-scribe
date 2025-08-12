@@ -12,6 +12,8 @@ export interface Testimony {
   tags?: string[];
   transcript_status: 'pending' | 'processing' | 'completed' | 'failed';
   transcript?: string;
+  summary?: string;
+  summary_prompt_id?: number;
   created_at: string;
   updated_at: string;
   recorded_at?: string;

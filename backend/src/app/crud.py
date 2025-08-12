@@ -1,3 +1,4 @@
+import hashlib
 from typing import Any, Dict, Optional
 
 from supabase import Client
@@ -39,3 +40,46 @@ def get_testimony_by_id(sb: Client, testimony_id: int) -> Optional[Dict[str, Any
     """Get a testimony by ID"""
     result = sb.table("testimonies").select("*").eq("id", testimony_id).single().execute()
     return result.data if result.data else None
+
+
+def get_or_create_summary_prompt(
+    sb: Client,
+    *,
+    name: str,
+    version: str,
+    prompt_template: str,
+    model_name: str,
+    temperature: float,
+    max_tokens: int,
+) -> int:
+    """Return the id of the summary_prompts row matching the prompt+model+version, creating it if needed."""
+    template_hash = hashlib.sha256(f"{prompt_template}|{model_name}|{version}".encode()).hexdigest()
+
+    # Try find by unique template_hash
+    query = sb.table("summary_prompts").select("id").eq("template_hash", template_hash).limit(1).execute()
+    if query and getattr(query, "data", None):
+        rows = query.data
+        if isinstance(rows, list) and len(rows) > 0:
+            return rows[0]["id"]
+
+    res = (
+        sb.table("summary_prompts")
+        .insert(
+            {
+                "name": name,
+                "version": version,
+                "prompt_template": prompt_template,
+                "model_name": model_name,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "template_hash": template_hash,
+                "is_active": True,
+            }
+        )
+        .execute()
+    )
+    return res.data[0]["id"]
+
+
+def update_testimony_summary_with_prompt(sb: Client, tid: int, summary: str, summary_prompt_id: int) -> None:
+    sb.table("testimonies").update({"summary": summary, "summary_prompt_id": summary_prompt_id}).eq("id", tid).execute()

@@ -29,6 +29,8 @@ class TestimonyOut(TestimonyBase):
     id: Union[int, str]  # Support both int and str to handle existing data
     transcript_status: str
     transcript: Optional[str] = None
+    summary: Optional[str] = None
+    summary_prompt_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     recorded_at: Optional[date] = None

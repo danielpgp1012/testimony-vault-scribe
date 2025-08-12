@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar, MapPin, FileAudio, Tag, File, Clock } from 'lucide-react';
 import { Testimony } from '@/types/testimony';
 import { format } from 'date-fns';
@@ -95,11 +96,46 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
         <Separator />
 
         <div className="flex-1 overflow-y-auto py-4">
-          <h3 className="font-semibold mb-2">Transcript</h3>
-          {testimony.transcript_status === 'completed' && testimony.transcript ? (
-            <div className="whitespace-pre-wrap text-sm">
-              {testimony.transcript}
-            </div>
+          {testimony.transcript_status === 'completed' && (testimony.summary || testimony.transcript) ? (
+            <Tabs defaultValue={testimony.summary ? "summary" : "transcript"} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="summary" disabled={!testimony.summary}>
+                  Summary
+                </TabsTrigger>
+                <TabsTrigger value="transcript" disabled={!testimony.transcript}>
+                  Raw Transcript
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="summary" className="mt-4">
+                {testimony.summary ? (
+                  <div className="whitespace-pre-wrap text-sm space-y-2">
+                    <div>{testimony.summary}</div>
+                    {typeof testimony.summary_prompt_id !== 'undefined' && (
+                      <div className="text-xs text-muted-foreground">
+                        Prompt ID: {testimony.summary_prompt_id}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Summary not available yet.
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="transcript" className="mt-4">
+                {testimony.transcript ? (
+                  <div className="whitespace-pre-wrap text-sm">
+                    {testimony.transcript}
+                  </div>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    Raw transcript not available.
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           ) : testimony.transcript_status === 'processing' ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-2 text-center">
               <div className="rounded-full bg-primary/10 p-3">
@@ -113,7 +149,7 @@ export function TestimonyDetail({ testimony, open, onClose }: TestimonyDetailPro
             </div>
           ) : (
             <div className="text-sm text-muted-foreground">
-              Transcript not available yet. Transcription will start soon.
+              Content not available yet. Transcription will start soon.
             </div>
           )}
         </div>

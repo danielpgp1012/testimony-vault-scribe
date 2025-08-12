@@ -21,12 +21,16 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
     failed: "bg-red-50 text-red-700 border-red-200"
   };
 
-  // Get the first 50 characters of transcription
-  const transcriptPreview = testimony.transcript
-    ? testimony.transcript.length > 50
-      ? `${testimony.transcript.substring(0, 50)}...`
-      : testimony.transcript
-    : null;
+  // Get the first 100 characters of summary (preferred) or transcript
+  const contentPreview = testimony.summary
+    ? testimony.summary.length > 100
+      ? `${testimony.summary.substring(0, 100)}...`
+      : testimony.summary
+    : testimony.transcript
+      ? testimony.transcript.length > 100
+        ? `${testimony.transcript.substring(0, 100)}...`
+        : testimony.transcript
+      : null;
 
   // Format the recorded date
   const recordedDate = testimony.recorded_at
@@ -79,12 +83,17 @@ export function TestimonyCard({ testimony, onViewDetails }: TestimonyCardProps) 
             </div>
           )}
 
-          {/* Transcript preview */}
-          {transcriptPreview && (
+          {/* Content preview (summary or transcript) */}
+          {contentPreview && (
             <div className="bg-muted/50 rounded-md p-3 mt-3">
               <p className="text-sm text-muted-foreground italic">
-                "{transcriptPreview}"
+                "{contentPreview}"
               </p>
+              {testimony.summary && (
+                <span className="text-xs text-muted-foreground/70 mt-1 block">
+                  Summary Preview
+                </span>
+              )}
             </div>
           )}
 
