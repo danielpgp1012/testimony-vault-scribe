@@ -36,7 +36,7 @@ def check_duplicate_testimony(
     return None
 
 
-def get_testimony_by_id(sb: Client, testimony_id: int) -> Optional[Dict[str, Any]]:
+def get_testimony_by_id(sb: Client, testimony_id: str) -> Optional[Dict[str, Any]]:
     """Get a testimony by ID"""
     result = sb.table("testimonies").select("*").eq("id", testimony_id).single().execute()
     return result.data if result.data else None

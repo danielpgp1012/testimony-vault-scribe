@@ -40,6 +40,38 @@ app.add_middleware(
 add_pagination(app)
 
 
+@app.get("/testimonies/semantic-search")
+def semantic_search(
+    q: str = Query(..., min_length=1),
+    k: int = Query(10, ge=1, le=100),
+    supabase=Depends(get_supabase),
+):
+    """Semantic search using pgvector cosine distance via an RPC.
+
+    Requires a Postgres function like match_testimonies(query_embedding vector(1536), match_count int)
+    that returns testimony rows with a similarity score, ordered by distance.
+    """
+    query_text = (q or "").strip()
+    if not query_text:
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    try:
+        # Create OpenAI client for embedding the query
+        client = OpenAI()
+        resp = client.embeddings.create(model=EMBEDDING_MODEL, input=[query_text.replace("\n", " ")])
+        query_vec = resp.data[0].embedding
+
+        # Call RPC that performs the vector search in Postgres
+        res = supabase.rpc(
+            "match_testimonies",
+            {"query_embedding": query_vec, "match_count": max(1, min(k, 100))},
+        ).execute()
+
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Semantic search error: {str(e)}")
+
+
 @app.post("/testimonies", response_model=TestimonyOut, status_code=201)
 async def create_testimony(
     # title: str = Form(...),
@@ -171,7 +203,7 @@ def list_testimonies(
 
 
 @app.get("/testimonies/{testimony_id}", response_model=TestimonyOut)
-def get_testimony(testimony_id: int, supabase=Depends(get_supabase)):
+def get_testimony(testimony_id: str, supabase=Depends(get_supabase)):
     """Get a specific testimony by ID"""
     testimony = get_testimony_by_id(supabase, testimony_id)
     if not testimony:
@@ -295,35 +327,3 @@ def get_user_profile(user_id: str, supabase=Depends(get_supabase)):
         if "PGRST116" in str(e):  # Supabase error for no rows returned
             raise HTTPException(status_code=404, detail="Profile not found")
         raise HTTPException(status_code=500, detail=f"Error fetching profile: {str(e)}")
-
-
-@app.get("/testimonies/semantic-search")
-def semantic_search(
-    query: str,
-    k: int = 10,
-    supabase=Depends(get_supabase),
-):
-    """Semantic search using pgvector cosine distance via an RPC.
-
-    Requires a Postgres function like match_testimonies(query_embedding vector(1536), match_count int)
-    that returns testimony rows with a similarity score, ordered by distance.
-    """
-    q = (query or "").strip()
-    if not q:
-        raise HTTPException(status_code=400, detail="Query cannot be empty")
-
-    try:
-        # Create OpenAI client for embedding the query
-        client = OpenAI()
-        resp = client.embeddings.create(model=EMBEDDING_MODEL, input=[q.replace("\n", " ")])
-        query_vec = resp.data[0].embedding
-
-        # Call RPC that performs the vector search in Postgres
-        res = supabase.rpc(
-            "match_testimonies",
-            {"query_embedding": query_vec, "match_count": max(1, min(k, 100))},
-        ).execute()
-
-        return res.data
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Semantic search error: {str(e)}")

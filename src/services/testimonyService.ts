@@ -60,6 +60,37 @@ export const searchTestimonies = async (query: string): Promise<Testimony[]> => 
   });
 };
 
+export const semanticSearchTestimonies = async (query: string, k: number = 10): Promise<Testimony[]> => {
+  if (!query || query.trim() === '') {
+    return fetchTestimoniesSimple();
+  }
+
+  const params = new URLSearchParams({ q: query.trim(), k: String(k) });
+  const response = await fetch(`${API_BASE_URL}/testimonies/semantic-search?${params.toString()}`);
+
+  if (!response.ok) {
+    throw new Error(`Semantic search failed: ${response.status} ${response.statusText}`);
+  }
+
+  const rows = await response.json() as any[];
+  // Map RPC rows to Testimony shape with safe fallbacks
+  const mapped: Testimony[] = rows.map((r) => ({
+    id: r.testimony_id ?? r.id,
+    church_id: r.church_id,
+    tags: r.tags ?? [],
+    transcript_status: (r.transcript_status as Testimony['transcript_status']) ?? 'completed',
+    transcript: r.transcript ?? undefined,
+    summary: r.summary ?? undefined,
+    created_at: r.created_at ?? r.recorded_at ?? new Date().toISOString(),
+    updated_at: r.updated_at ?? r.created_at ?? new Date().toISOString(),
+    recorded_at: r.recorded_at ?? undefined,
+    user_file_name: r.user_file_name ?? undefined,
+  }));
+
+  // Keep order as returned (already by similarity), but ensure dates exist for UI
+  return mapped;
+};
+
 // Enhanced search function with additional filters
 export const searchTestimoniesWithFilters = async (
   query: string,
