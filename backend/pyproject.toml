@@ -33,7 +33,8 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "pydantic>=2.10.2", # Ensure compatibility with FastAPI version if any issues arise
     "pydub",
-    "fastapi-pagination==0.12.28"
+    "fastapi-pagination==0.12.28",
+    "numpy>=2.3.2",
 ]
 
 # Optional: Add project URLs

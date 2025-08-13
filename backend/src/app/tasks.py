@@ -4,7 +4,7 @@ import traceback
 from celery import Celery
 from openai import OpenAI
 
-from .crud import get_or_create_summary_prompt, update_testimony
+from .crud import get_or_create_summary_prompt, update_testimony, upsert_testimony_embedding
 from .deps import get_supabase
 
 # --- Celery Configuration ---
@@ -136,6 +136,25 @@ def generate_summary(transcript: str) -> str:
         return ""
 
 
+# --- Embeddings Configuration ---
+# Global default model; not stored per-row
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-small")
+
+
+def generate_embedding_from_summary_text(text: str) -> list:
+    """Generate a single embedding for the full summary string (summary + hashtags as one line)."""
+    if not text or openai_client is None:
+        return []
+    try:
+        one_line = text.replace("\n", " ")
+        resp = openai_client.embeddings.create(model=EMBEDDING_MODEL, input=[one_line])
+        return resp.data[0].embedding
+    except Exception as e:
+        print(f"ERROR generating embedding: {e}")
+        traceback.print_exc()
+        return []
+
+
 @celery.task(bind=True, max_retries=3, default_retry_delay=60, name="transcribe_testimony")
 def transcribe_testimony(self, testimony_id: int, file_path: str):
     """
@@ -193,6 +212,15 @@ def transcribe_testimony(self, testimony_id: int, file_path: str):
             summary = generate_summary(transcript)
             if summary:
                 print(f"Summary generated: {summary[:200]}...")
+                # Embed the full summary (including hashtags) as a single vector
+                try:
+                    embedding = generate_embedding_from_summary_text(summary)
+                    if embedding:
+                        sb = get_supabase()
+                        upsert_testimony_embedding(sb, testimony_id, embedding)
+                        print(f"Embedded testimony {testimony_id}")
+                except Exception as e:
+                    print(f"ERROR embedding summary for {testimony_id}: {e}")
             update_db_status(testimony_id, "completed", transcript, summary, summary_prompt_id=prompt_id)
         else:
             print("WARNING: Transcription result is empty.")
