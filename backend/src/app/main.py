@@ -9,11 +9,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi_pagination import Page, add_pagination, paginate
 from fastapi_pagination.utils import disable_installed_extensions_check
+from openai import OpenAI
 
 from .crud import check_duplicate_testimony, get_testimony_by_id, insert_testimony
 from .deps import get_supabase
 from .schemas import ChurchLocation, ProfileOut, TestimonyOut
-from .tasks import celery
+from .tasks import EMBEDDING_MODEL, celery
 from .utils import get_audio_metadata
 
 LOGGER = logging.getLogger(__name__)
@@ -37,6 +38,38 @@ app.add_middleware(
 
 # Add pagination to the app
 add_pagination(app)
+
+
+@app.get("/testimonies/semantic-search")
+def semantic_search(
+    q: str = Query(..., min_length=1),
+    k: int = Query(10, ge=1, le=100),
+    supabase=Depends(get_supabase),
+):
+    """Semantic search using pgvector cosine distance via an RPC.
+
+    Requires a Postgres function like match_testimonies(query_embedding vector(1536), match_count int)
+    that returns testimony rows with a similarity score, ordered by distance.
+    """
+    query_text = (q or "").strip()
+    if not query_text:
+        raise HTTPException(status_code=400, detail="Query cannot be empty")
+
+    try:
+        # Create OpenAI client for embedding the query
+        client = OpenAI()
+        resp = client.embeddings.create(model=EMBEDDING_MODEL, input=[query_text.replace("\n", " ")])
+        query_vec = resp.data[0].embedding
+
+        # Call RPC that performs the vector search in Postgres
+        res = supabase.rpc(
+            "match_testimonies",
+            {"query_embedding": query_vec, "match_count": max(1, min(k, 100))},
+        ).execute()
+
+        return res.data
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Semantic search error: {str(e)}")
 
 
 @app.post("/testimonies", response_model=TestimonyOut, status_code=201)
@@ -170,7 +203,7 @@ def list_testimonies(
 
 
 @app.get("/testimonies/{testimony_id}", response_model=TestimonyOut)
-def get_testimony(testimony_id: int, supabase=Depends(get_supabase)):
+def get_testimony(testimony_id: str, supabase=Depends(get_supabase)):
     """Get a specific testimony by ID"""
     testimony = get_testimony_by_id(supabase, testimony_id)
     if not testimony:

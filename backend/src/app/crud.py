@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from supabase import Client
 
@@ -36,7 +36,7 @@ def check_duplicate_testimony(
     return None
 
 
-def get_testimony_by_id(sb: Client, testimony_id: int) -> Optional[Dict[str, Any]]:
+def get_testimony_by_id(sb: Client, testimony_id: str) -> Optional[Dict[str, Any]]:
     """Get a testimony by ID"""
     result = sb.table("testimonies").select("*").eq("id", testimony_id).single().execute()
     return result.data if result.data else None
@@ -83,3 +83,11 @@ def get_or_create_summary_prompt(
 
 def update_testimony_summary_with_prompt(sb: Client, tid: int, summary: str, summary_prompt_id: int) -> None:
     sb.table("testimonies").update({"summary": summary, "summary_prompt_id": summary_prompt_id}).eq("id", tid).execute()
+
+
+def upsert_testimony_embedding(sb: Client, tid: int, embedding: List[float]) -> None:
+    """Upsert a single embedding per testimony (no history)."""
+    sb.table("testimony_embeddings").upsert(
+        {"testimony_id": tid, "embedding": embedding},
+        on_conflict="testimony_id",
+    ).execute()

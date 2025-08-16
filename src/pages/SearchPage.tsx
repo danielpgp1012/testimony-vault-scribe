@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TestimonyCard } from '@/components/TestimonyCard';
 import { TestimonyDetail } from '@/components/TestimonyDetail';
 import { Testimony } from '@/types/testimony';
-import { searchTestimonies } from '@/services/testimonyService';
+import { searchTestimonies, semanticSearchTestimonies } from '@/services/testimonyService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +16,7 @@ const SearchPage = () => {
   const [selectedTestimony, setSelectedTestimony] = useState<Testimony | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [useSemantic, setUseSemantic] = useState(true);
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async () => {
@@ -25,7 +26,9 @@ const SearchPage = () => {
     setHasSearched(true);
 
     try {
-      const results = await searchTestimonies(searchQuery);
+      const results = useSemantic
+        ? await semanticSearchTestimonies(searchQuery, 24)
+        : await searchTestimonies(searchQuery);
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
@@ -58,7 +61,7 @@ const SearchPage = () => {
         </p>
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
@@ -70,6 +73,14 @@ const SearchPage = () => {
             onKeyDown={handleKeyDown}
           />
         </div>
+        <label className="flex items-center gap-2 text-sm text-muted-foreground select-none">
+          <input
+            type="checkbox"
+            checked={useSemantic}
+            onChange={(e) => setUseSemantic(e.target.checked)}
+          />
+          Semantic
+        </label>
         <Button onClick={handleSearch}>
           {t('nav.search')}
         </Button>
