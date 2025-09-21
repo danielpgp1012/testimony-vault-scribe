@@ -32,3 +32,4 @@ dist-ssr
 /backend/venv
 .env
 backend/src/testimony_backend.egg-info/PKG-INFO
+*.egg-info/*
